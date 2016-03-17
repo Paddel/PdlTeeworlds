@@ -1,0 +1,13 @@
+compiler.driver = 'cl'
+compiler.c_compiler = false
+compiler.cxx_compiler = false
+stackprotector.value = false
+zlib.value = false
+zlib.include_path = false
+sdl.value = true
+sdl.use_sdlconfig = false
+sdl.use_win32sdl = true
+sdl.use_osxframework = false
+freetype.value = true
+freetype.use_ftconfig = false
+freetype.use_win32lib = true
