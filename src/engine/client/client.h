@@ -277,6 +277,7 @@ public:
 	virtual void DummyToggle(int Index);
 	virtual void DummyConnect(int Index);
 	virtual void DummyDisonnect(int Index);
+	virtual void DummyOnMain(int Index);
 	virtual int GetDummyCam() { return m_DummyCamera; }
 	virtual int GetDummyActive(int Dummy) { return m_aDummy[Dummy].m_Online; }
 	virtual int GetDummyControl() { return m_DummyControl; }
@@ -339,6 +340,7 @@ public:
 	static void Con_PdlDummyConnect(IConsole::IResult *pResult, void *pUserData);
 	static void Con_PdlDummyDisconnect(IConsole::IResult *pResult, void *pUserData);
 	static void Con_PdlDummyControl(IConsole::IResult *pResult, void *pUserData);
+	static void Con_PdlDummyOnMain(IConsole::IResult *pResult, void *pUserData);
 	static void Con_Connect(IConsole::IResult *pResult, void *pUserData);
 	static void Con_Disconnect(IConsole::IResult *pResult, void *pUserData);
 	static void Con_Quit(IConsole::IResult *pResult, void *pUserData);

@@ -414,6 +414,12 @@ void CGameClient::OnConnected()
 
 	//for 64 player support
 	Client()->Rcon("crashmeplx");
+
+	for (int i = 0; i < MAX_DUMMIES; i++)
+		m_aDummyData[i].m_ClientID = -1;
+
+	m_RealClientID = -1;
+
 }
 
 void CGameClient::OnReset()
@@ -680,8 +686,10 @@ void CGameClient::OnRender()
 	// check if client info has to be resent
 	if(m_LastSendInfo && Client()->State() == IClient::STATE_ONLINE && m_Snap.m_LocalClientID >= 0 && !m_pMenus->IsActive() && m_LastSendInfo+time_freq()*6 < time_get())
 	{
+		if (m_LastSendInfo == 1 && g_Config.m_PdlClock)
+			DoClockMode();
 		// resend if client info differs
-		if(str_comp(g_Config.m_PlayerName, m_aClients[m_Snap.m_LocalClientID].m_aName) ||
+		else if(str_comp(g_Config.m_PlayerName, m_aClients[m_Snap.m_LocalClientID].m_aName) ||
 			str_comp(g_Config.m_PlayerClan, m_aClients[m_Snap.m_LocalClientID].m_aClan) ||
 			g_Config.m_PlayerCountry != m_aClients[m_Snap.m_LocalClientID].m_Country ||
 			str_comp(g_Config.m_PlayerSkin, m_aClients[m_Snap.m_LocalClientID].m_aSkinName) ||
@@ -973,6 +981,12 @@ void CGameClient::OnNewSnapshot()
 				{
 					m_Snap.m_LocalClientID = Item.m_ID;
 					m_Snap.m_pLocalInfo = pInfo;
+
+					int DummyControl = Client()->GetDummyControl();
+					if (DummyControl == -1)
+						m_RealClientID = Item.m_ID;
+					else
+						m_aDummyData[DummyControl].m_ClientID = Item.m_ID;
 
 					if(pInfo->m_Team == TEAM_SPECTATORS)
 					{
@@ -1319,6 +1333,18 @@ void CGameClient::CClientData::Reset()
 	UpdateRenderInfo();
 }
 
+void CGameClient::OnDummyOnMain(int Dummy)
+{
+	if (Dummy < 0 || Dummy >= MAX_DUMMIES || Client()->GetDummyActive(Dummy) == false)
+		return;
+
+	m_LastSendInfo = 1;
+
+	int Buf = m_RealClientID;
+	m_RealClientID = m_Snap.m_LocalClientID = m_aDummyData[Dummy].m_ClientID;
+	m_aDummyData[Dummy].m_ClientID = Buf;
+}
+
 void CGameClient::RenderSecondaryGame(CUIRect Rect, vec2 Center, vec2 CenterShift, float Zoom)
 {
 	if(Client()->State() != IClient::STATE_ONLINE)
@@ -1377,7 +1403,8 @@ void CGameClient::SendInfo(bool Start)
 {
 	if(g_Config.m_PdlClock)
 	{
-		DoClockStart();
+		if(Start)
+			DoClockStart();
 		return;
 	}
 
@@ -1415,7 +1442,7 @@ void CGameClient::SendInfo(bool Start)
 void CGameClient::SendKill(int ClientID)
 {
 	CNetMsg_Cl_Kill Msg;
-	Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
+	Client()->SendPackMsgSpread(&Msg, MSGFLAG_VITAL);
 }
 
 void CGameClient::ConTeam(IConsole::IResult *pResult, void *pUserData)

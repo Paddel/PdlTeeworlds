@@ -173,11 +173,16 @@ public:
 	struct
 	{
 		CPlayerInfo m_PlayerInfo;
+		int m_ClientID;
 
 		//	int m_SnappedID;
 	} m_aDummyData[MAX_DUMMIES];
+	int m_RealClientID;
+
+	bool m_ResendInfo;
 
 	virtual CPlayerInfo *GetDummyPlayerInfo(int Dummy) { return &m_aDummyData[Dummy].m_PlayerInfo; }
+	virtual void OnDummyOnMain(int Dummy);
 
 	// client data
 	struct CClientData

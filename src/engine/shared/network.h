@@ -177,6 +177,8 @@ public:
 	int Update();
 	int Flush();
 
+	void ResetBuffer() { m_Buffer.Init(); }
+
 	int Feed(CNetPacketConstruct *pPacket, NETADDR *pAddr);
 	int QueueChunk(int Flags, int DataSize, const void *pData);
 

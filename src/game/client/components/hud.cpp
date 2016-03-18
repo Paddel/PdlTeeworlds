@@ -259,27 +259,28 @@ void CHud::RenderWarmupTimer()
 
 void CHud::RenderDummyCam()
 {
-	//int DummyCam = Client()->GetDummyCam();
-	//if(g_Config.m_PdlDummyCam == 0 || DummyCam == -1)
-	//	return;
+	int DummyCam = Client()->GetDummyCam();
+	if(g_Config.m_PdlDummyCam == 0 || DummyCam == -1 || Client()->IsDDRace() == false)
+		return;
 
-	//CUIRect Rect; Rect.x = 8; Rect.y = 120.0f; Rect.w = 200; Rect.h = 200;
-	//vec2 Center = m_pClient->m_pCamera->m_Center;
-	//int SpecID = m_pClient->m_aDummyData[DummyCam].m_Snap.m_LocalClientID;
-	////if(Client()->GetDummyControl() != -1)
-	//	//SpecID = m_pClient->m_RealID;
+	CUIRect Rect; Rect.x = 8.0f; Rect.y = 8.0f; Rect.w = 200.0f; Rect.h = 200.0f;
+	vec2 Center = m_pClient->m_pCamera->m_Center;
+	int SpecID = m_pClient->m_aDummyData[DummyCam].m_ClientID;
+	if(Client()->GetDummyControl() != -1)
+		SpecID = m_pClient->m_RealClientID;
 
-	//if(SpecID != -1)
-	//{
-	//	CGameClient::CSnapState::CCharacterInfo SpecChar = m_pClient->m_Snap.m_aCharacters[SpecID];
-	//	Center = vec2(SpecChar.m_Cur.m_X, SpecChar.m_Cur.m_Y);
-	//}
+	if (SpecID <= -1 || SpecID > MAX_CLIENTS)
+		return;
 
-	//m_pClient->RenderSecondaryGame(Rect, Center, vec2(635, 230), 3.0f);
+	CGameClient::CSnapState::CCharacterInfo SpecChar = m_pClient->m_Snap.m_aCharacters[SpecID];
+	Center = vec2(SpecChar.m_Cur.m_X, SpecChar.m_Cur.m_Y);
 
-	//m_Width = 300.0f*Graphics()->ScreenAspect();
-	//m_Height = 300.0f;
-	//Graphics()->MapScreen(0.0f, 0.0f, m_Width, m_Height);
+
+	m_pClient->RenderSecondaryGame(Rect, Center, vec2(635, 230), 3.0f);
+
+	m_Width = 300.0f*Graphics()->ScreenAspect();
+	m_Height = 300.0f;
+	Graphics()->MapScreen(0.0f, 0.0f, m_Width, m_Height);
 }
 
 void CHud::MapscreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup)

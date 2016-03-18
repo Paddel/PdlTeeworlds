@@ -380,6 +380,14 @@ void CClient::DummyDisonnect(int Index)
 				break;
 			}
 		}
+
+		if (m_DummyCamera == -1 && g_Config.m_PdlDummyCam && IsDDRace())
+		{
+			CNetMsg_Cl_Say Msg;
+			Msg.m_Team = 0;
+			Msg.m_pMessage = "/showall 0";
+			SendPackMsgSpread(&Msg, MSGFLAG_VITAL | MSGFLAG_FLUSH);
+		}
 	}
 
 	if(m_DummyControl == Index)
@@ -395,6 +403,26 @@ void CClient::DummyDisonnect(int Index)
 			}
 		}
 	}
+}
+
+void CClient::DummyOnMain(int Index)
+{
+	if (Index < 0 || Index >= MAX_DUMMIES || m_aDummy[Index].m_Online == false)
+		return;
+
+	m_NetClient.Flush();
+	m_aDummy[Index].m_NetClient.Flush();
+
+	m_NetClient.Connection()->ResetBuffer();
+	m_aDummy[Index].m_NetClient.Connection()->ResetBuffer();
+
+	CNetClient Buf = m_aDummy[Index].m_NetClient;
+	m_aDummy[Index].m_NetClient = m_NetClient;
+	m_NetClient = Buf;
+
+	GameClient()->OnDummyOnMain(Index);
+
+	DummyDisonnect(Index);
 }
 
 void CClient::SaveDummyInfos()
@@ -1388,8 +1416,7 @@ void CClient::ProcessServerPacketDummy(CNetChunk *pPacket, int Index)
 		{
 		}
 		else if (Msg == NETMSG_INPUTTIMING)
-		{
-
+		{		
 		}
 	}
 	//else
@@ -2659,7 +2686,31 @@ void CClient::Con_PdlDummyControl(IConsole::IResult *pResult, void *pUserData)
 	if(Index != -1 && pSelf->m_aDummy[Index].m_Online == false)
 		return;
 
+	if (g_Config.m_PdlDummyCam && pSelf->IsDDRace())
+	{
+		CNetMsg_Cl_Say Msg;
+		Msg.m_Team = 0;
+		Msg.m_pMessage = "/showall 0";
+		pSelf->SendPackMsgSpread(&Msg, MSGFLAG_VITAL | MSGFLAG_FLUSH);
+	}
+
 	pSelf->m_DummyControl = Index;
+
+	if (g_Config.m_PdlDummyCam && pSelf->IsDDRace())
+	{
+		CNetMsg_Cl_Say Msg;
+		Msg.m_Team = 0;
+		Msg.m_pMessage = "/showall 1";
+		pSelf->SendPackMsgSpread(&Msg, MSGFLAG_VITAL | MSGFLAG_FLUSH);
+	}
+}
+
+void CClient::Con_PdlDummyOnMain(IConsole::IResult *pResult, void *pUserData)
+{
+	CClient *pSelf = (CClient *)pUserData;
+	int Index = pResult->GetInteger(0);
+
+	pSelf->DummyOnMain(Index);
 }
 
 void CClient::Con_Connect(IConsole::IResult *pResult, void *pUserData)
@@ -2914,6 +2965,7 @@ void CClient::RegisterCommands()
 	m_pConsole->Register("pdl_dummy_connect", "i", CFGFLAG_CLIENT, Con_PdlDummyConnect, this, "Connect a dummy");
 	m_pConsole->Register("pdl_dummy_disconnect", "i", CFGFLAG_CLIENT, Con_PdlDummyDisconnect, this, "Disconnect a dummy");
 	m_pConsole->Register("pdl_dummy_control", "i", CFGFLAG_CLIENT, Con_PdlDummyControl, this, "Controls a specific dummy");
+	m_pConsole->Register("pdl_dummy_main", "i", CFGFLAG_CLIENT, Con_PdlDummyOnMain, this, "Make a dummy the main tee");
 
 	m_pConsole->Register("quit", "", CFGFLAG_CLIENT|CFGFLAG_STORE, Con_Quit, this, "Quit Teeworlds");
 	m_pConsole->Register("exit", "", CFGFLAG_CLIENT|CFGFLAG_STORE, Con_Quit, this, "Quit Teeworlds");
