@@ -27,10 +27,33 @@ void CBroadcast::OnRender()
 
 	if(time_get() < m_BroadcastTime)
 	{
+		mem_copy(m_aShownText, m_aBroadcastText, sizeof(m_aShownText));
 		CTextCursor Cursor;
 		TextRender()->SetCursor(&Cursor, m_BroadcastRenderOffset, 40.0f, 12.0f, TEXTFLAG_RENDER|TEXTFLAG_STOP_AT_END);
 		Cursor.m_LineWidth = 300*Graphics()->ScreenAspect()-m_BroadcastRenderOffset;
-		TextRender()->TextEx(&Cursor, m_aBroadcastText, -1);
+
+		float ms = (time_get() - m_AnimTime) / (float)time_freq() * 1000.0f;
+		int Pos = clamp((int)(ms / 10), 0, 1024);
+		if (Pos < str_length(m_aBroadcastText))
+			m_aShownText[Pos] = '\0';
+
+		TextRender()->TextEx(&Cursor, m_aShownText, -1);
+	}
+	else if (m_aShownText[0])
+	{
+		CTextCursor Cursor;
+		TextRender()->SetCursor(&Cursor, m_BroadcastRenderOffset, 40.0f, 12.0f, TEXTFLAG_RENDER | TEXTFLAG_STOP_AT_END);
+		Cursor.m_LineWidth = 300 * Graphics()->ScreenAspect() - m_BroadcastRenderOffset;
+
+		float ms = (time_get() - m_BroadcastTime) / (float)time_freq() * 1000.0f;
+		int Pos = str_length(m_aBroadcastText) - clamp((int)(ms / 10), 0, 1024);
+		if (Pos > 0)
+		{
+			m_aShownText[Pos] = '\0';
+			TextRender()->TextEx(&Cursor, m_aShownText, -1);
+		}
+		else
+			mem_zero(&m_aShownText, sizeof(m_aShownText));
 	}
 }
 
@@ -45,7 +68,11 @@ void CBroadcast::OnMessage(int MsgType, void *pRawMsg)
 		Cursor.m_LineWidth = 300*Graphics()->ScreenAspect();
 		TextRender()->TextEx(&Cursor, m_aBroadcastText, -1);
 		m_BroadcastRenderOffset = 150*Graphics()->ScreenAspect()-Cursor.m_X/2;
-		m_BroadcastTime = time_get()+time_freq()*10;
+
+		if (time_get() > m_BroadcastTime)
+			m_AnimTime = time_get();
+
+		m_BroadcastTime = time_get() + time_freq() * 10;
 	}
 }
 

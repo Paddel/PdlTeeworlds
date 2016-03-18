@@ -358,6 +358,8 @@ void CClient::DummyConnect(int Index)
 
 	if(m_DummyCamera == -1)
 		m_DummyCamera = Index;
+
+	GameClient()->OnDummyOnJoin(Index);
 }
 
 void CClient::DummyDisonnect(int Index)
@@ -1373,7 +1375,7 @@ void CClient::ProcessServerPacketDummy(CNetChunk *pPacket, int Index)
 		}
 		else if (Msg == NETMSG_CON_READY)
 		{
-			IGameClient::CPlayerInfo *pPlayerInfo = GameClient()->GetDummyPlayerInfo(Index);
+			IGameClient::CPlayerInfo *pPlayerInfo = GameClient()->GetDummyJoinInfo(Index);
 
 			CMsgPacker MsgRcon(NETMSG_RCON_CMD);
 			MsgRcon.AddString("crashmeplx", 256);
@@ -2683,7 +2685,7 @@ void CClient::Con_PdlDummyControl(IConsole::IResult *pResult, void *pUserData)
 	if(Index < -1 || Index >= MAX_DUMMIES ||Index == pSelf->m_DummyControl)
 		return;
 
-	if(Index != -1 && pSelf->m_aDummy[Index].m_Online == false)
+	if(Index != -1 && (pSelf->m_aDummy[Index].m_Online == false || pSelf->m_aDummy[Index].m_NetClient.State() < 2))
 		return;
 
 	if (g_Config.m_PdlDummyCam && pSelf->IsDDRace())

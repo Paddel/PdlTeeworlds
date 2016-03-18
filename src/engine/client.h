@@ -238,6 +238,8 @@ public:
 	virtual const char *NetVersion() = 0;
 
 	virtual CPlayerInfo *GetDummyPlayerInfo(int Dummy) = 0;
+	virtual CPlayerInfo *GetDummyJoinInfo(int Dummy) = 0;
+	virtual void OnDummyOnJoin(int Dummy) = 0;
 	virtual void OnDummyOnMain(int Dummy) = 0;
 };
 

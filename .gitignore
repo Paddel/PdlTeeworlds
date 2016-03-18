@@ -4,6 +4,12 @@ logs.txt
 objs
 compile_out.txt
 
+*.suo
+*.pdb
+*.sdf
+*.opendb
+
+
 # Windows image file caches
 Thumbs.db
 ehthumbs.db

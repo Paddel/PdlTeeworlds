@@ -55,6 +55,8 @@
 #include "components/autorun.h"
 #include "components/blockhelp.h"
 #include "components/playercollection.h"
+#include "components/identities.h"
+
 
 CGameClient g_GameClient;
 
@@ -94,6 +96,7 @@ static CBlockScore gs_BlockScore;
 static CAutoRun gs_AutoRun;
 static CBlockHelp gs_BlockHelp;
 static CPlayerCollection gs_PlayerCollection;
+static CIdentities gs_Identities;
 
 CGameClient::CStack::CStack() { m_Num = 0; }
 void CGameClient::CStack::Add(class CComponent *pComponent) { m_paComponents[m_Num++] = pComponent; }
@@ -143,6 +146,7 @@ void CGameClient::OnConsoleInit()
 	m_pAutoRun = &::gs_AutoRun;
 	m_pBlockHelp = &::gs_BlockHelp;
 	m_pPlayerCollection = &::gs_PlayerCollection;
+	m_pIdentities = &::gs_Identities;
 
 	// make a list of all the systems, make sure to add them in the corrent render order
 	m_All.Add(m_pSkins);
@@ -156,6 +160,7 @@ void CGameClient::OnConsoleInit()
 	m_All.Add(m_pVoting);
 	m_All.Add(m_pParticles); // doesn't render anything, just updates all the particles
 	m_All.Add(m_pPlayerCollection);
+	m_All.Add(m_pIdentities);
 
 	m_All.Add(&gs_MapLayersBackGround); // first to render
 	m_All.Add(&m_pParticles->m_RenderTrail);
@@ -1331,6 +1336,23 @@ void CGameClient::CClientData::Reset()
 	m_BlockType = 0;
 	m_aAddr[0] = 0;
 	UpdateRenderInfo();
+}
+
+
+IGameClient::CPlayerInfo *CGameClient::GetDummyJoinInfo(int Dummy)
+{ 
+	IGameClient::CPlayerInfo *pInfo = new IGameClient::CPlayerInfo();
+	if (str_comp(m_aDummyData[Dummy].m_PlayerInfo.m_aName, "%rand%") == 0)
+		*pInfo = m_pIdentities->RandomPlayerInfo();
+	else
+		*pInfo = m_aDummyData[Dummy].m_PlayerInfo;
+
+	return pInfo;
+}
+
+void CGameClient::OnDummyOnJoin(int Dummy)
+{
+	m_aDummyData[Dummy].m_ClientID = -1;
 }
 
 void CGameClient::OnDummyOnMain(int Dummy)

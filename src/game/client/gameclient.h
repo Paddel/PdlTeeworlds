@@ -182,6 +182,8 @@ public:
 	bool m_ResendInfo;
 
 	virtual CPlayerInfo *GetDummyPlayerInfo(int Dummy) { return &m_aDummyData[Dummy].m_PlayerInfo; }
+	virtual CPlayerInfo *GetDummyJoinInfo(int Dummy);
+	virtual void OnDummyOnJoin(int Dummy);
 	virtual void OnDummyOnMain(int Dummy);
 
 	// client data
@@ -294,6 +296,7 @@ public:
 	class CAutoRun *m_pAutoRun;
 	class CBlockHelp *m_pBlockHelp;
 	class CPlayerCollection *m_pPlayerCollection;
+	class CIdentities *m_pIdentities;
 };
 
 

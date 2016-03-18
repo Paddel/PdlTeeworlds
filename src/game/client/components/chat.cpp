@@ -148,7 +148,7 @@ bool CChat::OnInput(IInput::CEvent Event)
 				else
 				{
 					char aBuf[32];
-					str_copy(aBuf, ".PlayerCheck", sizeof(aBuf));
+					str_copy(aBuf, ".Playercheck", sizeof(aBuf));
 					if(str_comp_num(m_Input.GetString(), aBuf, str_length(aBuf)) == 0)
 					{
 						if(str_length(m_Input.GetString()) >= str_length(aBuf)+2)

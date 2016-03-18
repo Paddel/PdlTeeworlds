@@ -7,8 +7,10 @@
 class CBroadcast : public CComponent
 {
 	// broadcasts
+	char m_aShownText[1024];
 	char m_aBroadcastText[1024];
 	int64 m_BroadcastTime;
+	int64 m_AnimTime;
 	float m_BroadcastRenderOffset;
 
 public:
