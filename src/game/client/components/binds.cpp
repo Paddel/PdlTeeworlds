@@ -225,7 +225,7 @@ void CBinds::ConDumpBinds(IConsole::IResult *pResult, void *pUserData)
 		for (int j = 0; j < 2; j++)
 		{
 			bool Alt = j == 1;
-			if (pBinds->m_aaKeyBindings[i](Alt)[0] == 0)
+			if (pBinds->m_aaKeyBindings[i](Alt)[0] != 0)
 			{
 				str_format(aBuf, sizeof(aBuf), "%s%s (%d) = %s", Alt?"LAlt + " : "", pBinds->Input()->KeyName(i), i, pBinds->m_aaKeyBindings[i](Alt));
 				pBinds->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "binds", aBuf);
