@@ -1,0 +1,28 @@
+
+vec4 Grayscale(vec4 Color)
+{
+    float g = (Color.r + Color.g + Color.b) / 3.0;
+ 	return vec4(g, g, g, Color.a);
+}
+
+vec4 circle(vec2 uv, vec2 pos, float rad, vec3 color) {
+	float d = length(pos - uv) - rad;
+	float t = clamp(d, 0.0, 1.0);
+	return vec4(color, 1.0 - t);
+}
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord )
+{
+	vec2 uv = fragCoord.xy / iResolution.xy;
+    vec2 center = iResolution.xy * 0.5;
+    float radius = iResolution.x*0.25;
+    float Percent = min(iGlobalTime / 5.0, 1.0);
+    
+    vec4 PixelColor = vec4(uv,0.5+0.5*sin(iGlobalTime), 1.0);
+    vec4 Color = Grayscale(PixelColor);
+    vec4 CircCol = circle(uv * iResolution.xy, center, radius * Percent, PixelColor.rgb);
+    
+    vec4 FinalColor = mix(Color, CircCol, CircCol.a);
+    
+	fragColor = FinalColor;
+}
