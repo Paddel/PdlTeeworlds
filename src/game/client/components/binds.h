@@ -50,6 +50,7 @@ public:
 
 	virtual void OnConsoleInit();
 	virtual bool OnInput(IInput::CEvent Event);
+	virtual void OnRender();
 
 	IInput *GetInput() const { return Input(); }
 };

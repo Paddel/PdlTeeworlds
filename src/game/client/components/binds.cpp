@@ -288,3 +288,29 @@ void CBinds::ConfigSaveCallback(IConfig *pConfig, void *pUserData)
 		}
 	}
 }
+
+void CBinds::OnRender()
+{
+	bool Alt = GetInput()->KeyPressed(KEY_LALT);
+	static bool s_LastAlt = Alt;
+	int Reset = -1;
+
+	if (Alt == true && s_LastAlt == false)
+		Reset = 0;
+	else if (Alt == false && s_LastAlt == true)
+		Reset = 1;
+
+	if (Reset != -1)
+	{//reset all stroke
+		for (int i = 0; i < KEY_LAST; i++)
+		{
+			char *pCmd = m_aaKeyBindings[i](Reset);
+			if (pCmd[0] != '+')
+				continue;
+
+			Console()->ExecuteLineStroked(false, pCmd);
+		}
+	}
+
+	s_LastAlt = Alt;
+}

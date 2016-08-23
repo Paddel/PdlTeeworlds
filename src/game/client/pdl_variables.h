@@ -52,4 +52,8 @@ MACRO_CONFIG_INT(PdlGrenadeDodge, pdl_grenade_dodge, 0, 0, 1, CFGFLAG_CLIENT, "A
 MACRO_CONFIG_INT(PdlGrenadeCooldown, pdl_grenade_cooldown, 0, 0, 1, CFGFLAG_CLIENT, "Active")
 MACRO_CONFIG_INT(PdlGrenadeJump, pdl_grenade_jump, 0, 0, 1, CFGFLAG_CLIENT, "Active")
 
+MACRO_CONFIG_INT(PdlAutoHideConsole, pdl_auto_hide_console, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Active")
+
+MACRO_CONFIG_INT(PdlUpdateIdentities, pdl_update_identities, 1, 0, 1, CFGFLAG_CLIENT, "UpdateIdentities")
+
 #endif

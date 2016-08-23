@@ -205,6 +205,9 @@ void CGameClient::OnConsoleInit()
 	Console()->Register("team", "i", CFGFLAG_CLIENT, ConTeam, this, "Switch team");
 	Console()->Register("kill", "", CFGFLAG_CLIENT, ConKill, this, "Kill yourself");
 
+	Console()->Register("pdl_showall", "?i", CFGFLAG_CLIENT, ConShowAll, this, "Show all players");
+	Console()->Register("pdl_dummy_autorun", "i", CFGFLAG_CLIENT, ConDummyAutorun, this, "Let your dummy run");
+
 	Console()->Register("pdl_dummyinfo_name", "is", CFGFLAG_CLIENT, ConDummyinfoName, this, "Name of Dummy");
 	Console()->Register("pdl_dummyinfo_clan", "is", CFGFLAG_CLIENT, ConDummyinfoClan, this, "Clan of Dummy");
 	Console()->Register("pdl_dummyinfo_country", "ii", CFGFLAG_CLIENT, ConDummyinfoCountry, this, "Country of Dummy");
@@ -290,6 +293,10 @@ void CGameClient::InitTextures()
 void CGameClient::OnInit()
 {
 	m_pGraphics = Kernel()->RequestInterface<IGraphics>();
+	m_ShowAll = false;
+	m_LastShowAll = false;
+	m_LastShowAllUpdate = 0;
+	m_DummyAutorun = false;
 
 	UI()->SetClient(this);
 
@@ -354,6 +361,53 @@ void CGameClient::OnInit()
 	Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "gameclient", aBuf);
 
 	m_ServerMode = SERVERMODE_PURE;
+}
+
+void CGameClient::HandleDummyAutorun()
+{
+	static int s_LastControl = Client()->GetDummyControl();
+
+	/*if(s_LastControl != Client()->GetDummyControl());
+	{
+		m_DummyAutorun = false;
+		s_LastControl = Client()->GetDummyControl();
+		return;
+	}*/
+
+	int DummyCam = 0;//Client()->GetDummyCam();
+	if(/*g_Config.m_PdlDummyCam != 0 &&*/ m_aDummyData[DummyCam].m_ClientID != -1 && Client()->IsDDRace())
+	{
+		int SpecID = m_aDummyData[DummyCam].m_ClientID;
+		bool Swap = Client()->GetDummyControl() == DummyCam;
+		if(Swap)
+			SpecID = m_RealClientID;
+
+		if (SpecID > -1 && SpecID <= MAX_CLIENTS)
+		{
+			int m_aData[MAX_INPUT_SIZE];
+
+			m_pAutoRun->SnapInput(&m_aDummyData[DummyCam].m_InputData, SpecID, Swap ? -1 : DummyCam);
+			mem_copy(&m_aData, &m_aDummyData[DummyCam].m_InputData, sizeof(m_aDummyData[DummyCam].m_InputData));
+
+			int Size = 40;
+
+			CMsgPacker Msg(NETMSG_INPUT);
+			Msg.AddInt(Client()->AckGameTick());
+			Msg.AddInt(Client()->PredGameTick());
+			Msg.AddInt(Size);
+
+			// pack it
+			for(int i = 0; i < Size/4; i++)
+				Msg.AddInt(m_aData[i]);
+
+			if(Swap)
+				Client()->SendMsg(&Msg, MSGFLAG_FLUSH, true);
+			else
+				Client()->SendMsgDummy(&Msg, MSGFLAG_FLUSH, DummyCam);
+		}
+	}
+
+	s_LastControl = Client()->GetDummyControl();
 }
 
 void CGameClient::DispatchInput()
@@ -658,6 +712,23 @@ void CGameClient::OnRender()
 		if(m_LastMinute != pTime->tm_min)
 			DoClockMode();
 	}
+
+	if(ShowAllPlayers() != m_LastShowAll && m_LastShowAllUpdate < time_get() && Client()->IsDDRace())
+	{
+		CNetMsg_Cl_Say Msg;
+		Msg.m_Team = 0;
+		if(ShowAllPlayers())
+			Msg.m_pMessage = "/showall 1";
+		else
+			Msg.m_pMessage = "/showall 0";
+		Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
+
+		m_LastShowAll = ShowAllPlayers();
+		m_LastShowAllUpdate = time_get() + time_freq() * 2.0f;
+	}
+
+	if(m_DummyAutorun)
+		HandleDummyAutorun();
 
 	/*Graphics()->Clear(1,0,0);
 
@@ -1071,6 +1142,7 @@ void CGameClient::OnNewSnapshot()
 			m_Snap.m_pLocalCharacter = &c->m_Cur;
 			m_Snap.m_pLocalPrevCharacter = &c->m_Prev;
 			m_LocalCharacterPos = vec2(m_Snap.m_pLocalCharacter->m_X, m_Snap.m_pLocalCharacter->m_Y);
+
 		}
 		else if(Client()->SnapFindItem(IClient::SNAP_PREV, NETOBJTYPE_CHARACTER, m_Snap.m_LocalClientID))
 		{
@@ -1353,6 +1425,7 @@ IGameClient::CPlayerInfo *CGameClient::GetDummyJoinInfo(int Dummy)
 void CGameClient::OnDummyOnJoin(int Dummy)
 {
 	m_aDummyData[Dummy].m_ClientID = -1;
+	mem_zero(&m_aDummyData[Dummy].m_InputData, sizeof(m_aDummyData[Dummy].m_InputData));
 }
 
 void CGameClient::OnDummyOnMain(int Dummy)
@@ -1414,6 +1487,17 @@ void CGameClient::RenderSecondaryGame(CUIRect Rect, vec2 Center, vec2 CenterShif
 	UI()->ClipDisable();
 }
 
+bool CGameClient::ShowAllPlayers()
+{
+	if(m_ShowAll)
+		return true;
+
+	if(g_Config.m_PdlDummyCam && Client()->GetDummyCam() != -1)
+		return true;
+
+	return false;
+}
+
 void CGameClient::SendSwitchTeam(int Team)
 {
 	CNetMsg_Cl_SetTeam Msg;
@@ -1467,6 +1551,20 @@ void CGameClient::SendKill(int ClientID)
 	Client()->SendPackMsgSpread(&Msg, MSGFLAG_VITAL);
 }
 
+void CGameClient::SendKillDummy(int DummyID)
+{
+	if(DummyID == -1)
+	{
+		CNetMsg_Cl_Kill Msg;
+		Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
+	}
+	else
+	{
+		CNetMsg_Cl_Kill Msg;
+		Client()->SendPackMsgDummy(&Msg, MSGFLAG_VITAL, DummyID);
+	}
+}
+
 void CGameClient::ConTeam(IConsole::IResult *pResult, void *pUserData)
 {
 	((CGameClient*)pUserData)->SendSwitchTeam(pResult->GetInteger(0));
@@ -1475,6 +1573,29 @@ void CGameClient::ConTeam(IConsole::IResult *pResult, void *pUserData)
 void CGameClient::ConKill(IConsole::IResult *pResult, void *pUserData)
 {
 	((CGameClient*)pUserData)->SendKill(-1);
+}
+
+void CGameClient::ConShowAll(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameClient *pSelf = (CGameClient *)pUserData;
+	if(pResult->NumArguments() == 0)
+	{
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "ShowAll=%i RenderingAll=%i NumPlayersRendering=%i .. refreshing", pSelf->m_ShowAll, pSelf->ShowAllPlayers(), gs_Players.GetPlayerCount());
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "gameclient", aBuf);
+
+		pSelf->m_LastShowAll = !pSelf->m_LastShowAll;
+	}
+	else if(pResult->NumArguments() == 1)
+	{
+		pSelf->m_ShowAll = (bool)pResult->GetInteger(0);
+	}
+}
+
+void CGameClient::ConDummyAutorun(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameClient *pSelf = (CGameClient *)pUserData;
+	pSelf->m_DummyAutorun = (bool)pResult->GetInteger(0);
 }
 
 void CGameClient::ConDummyinfoName(IConsole::IResult *pResult, void *pUserData)

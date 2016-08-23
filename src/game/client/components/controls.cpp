@@ -12,6 +12,7 @@
 #include <game/client/components/menus.h>
 #include <game/client/components/scoreboard.h>
 #include <game/client/components/blockhelp.h>
+#include <game/client/components/autorun.h>
 #include <game/client/components/skins.h>
 
 #include "controls.h"
@@ -104,6 +105,7 @@ void CControls::OnConsoleInit()
 	Console()->Register("+block_set", "", CFGFLAG_CLIENT, ConKeyInputState, &m_FakeInputData[FAKEINPUT_BLOCK_SET], "Block");
 	Console()->Register("+grenade", "", CFGFLAG_CLIENT, ConKeyInputState, &m_FakeInputData[FAKEINPUT_GRENADEAIM], "Aimassistance for Grenade");
 	Console()->Register("+step", "", CFGFLAG_CLIENT, ConKeyInputState, &m_FakeInputData[FAKEINPUT_STEP], "Step");
+	Console()->Register("+vibrate", "", CFGFLAG_CLIENT, ConKeyInputState, &m_FakeInputData[FAKEINPUT_VIBRATE], "Step");
 
 	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 1}; Console()->Register("+weapon1", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to hammer"); }
 	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 2}; Console()->Register("+weapon2", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to gun"); }
@@ -235,117 +237,194 @@ void CControls::GrenadeKills()
 	CNetObj_CharacterCore LocalChar;
 	vec2 FuturePos[GRENADE_DODGE_TICKS];
 	int LocalID = m_pClient->m_Snap.m_LocalClientID;
-	if (LocalID < 0 || LocalID >= MAX_CLIENTS || Client()->State() != IClient::STATE_ONLINE)
+	if (LocalID < 0 || LocalID >= MAX_CLIENTS || Client()->State() != IClient::STATE_ONLINE || m_pClient->m_Snap.m_pGameInfoObj == NULL || m_pClient->m_Snap.m_pLocalCharacter == NULL)
 		return;
+
+	int LocalTeam = 0;
+
+	bool isTeam = false;
+
+	if(m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_TEAMS && m_pClient->m_Snap.m_pLocalInfo)
+	{
+		isTeam = true;
+		LocalTeam = m_pClient->m_Snap.m_pLocalInfo->m_Team;
+	}
+
+	int Weapon = m_pClient->m_Snap.m_pLocalCharacter->m_Weapon;
 
 	m_pClient->m_aClients[LocalID].m_Predicted.Write(&LocalChar);
 
 	vec2 LocalPos = vec2(LocalChar.m_X, LocalChar.m_Y);
 
-	vec2 EnemyPos[MAX_CLIENTS][90];
-	for (int i = 0; i < MAX_CLIENTS; i++)
+	if(Weapon == WEAPON_GRENADE)
 	{
-		CWorldCore TempWorld;
-		CCharacterCore CharCores;
-		CNetObj_CharacterCore TempCore;
-		mem_zero(&CharCores, sizeof(CharCores));
-		if (!m_pClient->m_Snap.m_aCharacters[i].m_Active || i == LocalID)
-			continue;
-
-
-		CharCores.Init(&TempWorld, m_pClient->Collision());
-		m_pClient->m_aClients[i].m_Predicted.Write(&TempCore);
-		CharCores.Read(&TempCore);
-
-		//fill known input
-		CharCores.m_Input.m_Direction = TempCore.m_Direction;
-
-		for (int d = 0; d < 90; d++)
+		vec2 EnemyPos[MAX_CLIENTS][90];
+		for (int i = 0; i < MAX_CLIENTS; i++)
 		{
-			CharCores.Tick(true);
-			CharCores.Move();
-			CharCores.Quantize();
-			EnemyPos[i][d] = CharCores.m_Pos;
-		}
-	}
+			CWorldCore TempWorld;
+			CCharacterCore CharCores;
+			CNetObj_CharacterCore TempCore;
+			mem_zero(&CharCores, sizeof(CharCores));
+			if (!m_pClient->m_Snap.m_aCharacters[i].m_Active || i == LocalID || (isTeam && LocalTeam == m_pClient->m_Snap.m_paPlayerInfos[i]->m_Team))
+				continue;
 
+			CharCores.Init(&TempWorld, m_pClient->Collision());
+			m_pClient->m_aClients[i].m_Predicted.Write(&TempCore);
+			CharCores.Read(&TempCore);
 
-	float Curvature = m_pClient->m_Tuning.m_GrenadeCurvature;
-	float Speed = m_pClient->m_Tuning.m_GrenadeSpeed;
+			//fill known input
+			CharCores.m_Input.m_Direction = TempCore.m_Direction;
 
-	for (int i = 0; i < s_NumDirection; i++)
-		m_DirectionHit[i] = -1;
-
-	int DirectionID = 0;
-	for (float i = 0; i < 2 * pi; i += 0.01f, DirectionID++)
-	{
-		vec2 Direction = normalize(vec2(sinf(i), cosf(i)));
-
-		for (int d = 1; d < 18; d++)
-		{
-			float Tick = d / 10.0f;
-			vec2 ProjStartPos = LocalPos + Direction*28.0f*0.75f;
-			vec2 PrevPos = CalcPos(ProjStartPos, Direction, Curvature, Speed, Tick - 1 / 10.0f);
-			vec2 Pos = CalcPos(ProjStartPos, Direction, Curvature, Speed, Tick);
-
-			if (Collision()->CheckPoint(Pos.x, Pos.y))//Collision()->IntersectLine(Pos, PrevPos, NULL, NULL))
-				break;
-
-			for (int p = 0; p < MAX_CLIENTS; p++)
+			for (int d = 0; d < 90; d++)
 			{
-				if (!m_pClient->m_Snap.m_aCharacters[p].m_Active || p == LocalID)
-					continue;
+				CharCores.Tick(true);
+				CharCores.Move();
+				CharCores.Quantize();
+				EnemyPos[i][d] = CharCores.m_Pos;
+			}
+		}
 
-				//intersection
-				vec2 DifPos = EnemyPos[p][d]-Pos;
-				if (abs(DifPos.x) > 28 + 6 + 4 || abs(DifPos.y) > 28 + 6 + 4)//if one coordinate is over range
-					continue;
-				//if (DifPos.x*DifPos.x + DifPos.y * DifPos.y > 128)
-					//continue;
 
-				vec2 IntersectPos = closest_point_on_line(PrevPos, Pos, EnemyPos[p][d]);
-				float Len = distance(EnemyPos[p][d], IntersectPos);
-				if (Len < 28)
+		float Curvature = m_pClient->m_Tuning.m_GrenadeCurvature;
+		float Speed = m_pClient->m_Tuning.m_GrenadeSpeed;
+
+		for (int i = 0; i < s_NumDirection; i++)
+			m_DirectionHit[i] = -1;
+
+		int DirectionID = 0;
+		for (float i = 0; i < 2 * pi; i += 0.01f, DirectionID++)
+		{
+			vec2 Direction = normalize(vec2(sinf(i), cosf(i)));
+
+			for (int d = 1; d < 18; d++)
+			{
+				float Tick = d / 10.0f;
+				vec2 ProjStartPos = LocalPos + Direction*28.0f*0.75f;
+				vec2 PrevPos = CalcPos(ProjStartPos, Direction, Curvature, Speed, Tick - 1 / 10.0f);
+				vec2 Pos = CalcPos(ProjStartPos, Direction, Curvature, Speed, Tick);
+
+				if (Collision()->CheckPoint(Pos.x, Pos.y))//Collision()->IntersectLine(Pos, PrevPos, NULL, NULL))
+					break;
+
+				for (int p = 0; p < MAX_CLIENTS; p++)
 				{
-					m_DirectionHit[DirectionID] = d * 5;
+					if (!m_pClient->m_Snap.m_aCharacters[p].m_Active || p == LocalID)
+						continue;
+
+					//intersection
+					vec2 DifPos = EnemyPos[p][d]-Pos;
+					if (abs(DifPos.x) > 28 + 6 + 4 || abs(DifPos.y) > 28 + 6 + 4)//if one coordinate is over range
+						continue;
+					//if (DifPos.x*DifPos.x + DifPos.y * DifPos.y > 128)
+						//continue;
+
+					vec2 IntersectPos = closest_point_on_line(PrevPos, Pos, EnemyPos[p][d]);
+					float Len = distance(EnemyPos[p][d], IntersectPos);
+					if (Len < 28)
+					{
+						m_DirectionHit[DirectionID] = d * 5;
+						break;
+					}
+				}
+
+				if(m_DirectionHit[DirectionID] != -1)
+					break;
+			}
+		}
+
+		Graphics()->TextureSet(-1);
+		Graphics()->LinesBegin();
+	
+		DirectionID = 0;
+		for (float i = 0; i < 2 * pi; i += 0.01f, DirectionID++)
+		{
+			vec2 Direction = normalize(vec2(sinf(i), cosf(i)));
+			if (m_DirectionHit[DirectionID] == -1)
+				continue;
+
+			float Color = m_DirectionHit[DirectionID]/50.0f;
+			Graphics()->SetColor(1- Color, 0.1f, 0.1f, 0.75f);
+
+			for (int d = 0; d < 30; d++)
+			{
+				float Tick = d / (50.0f*0.3f);
+				vec2 ProjStartPos = LocalPos + Direction*28.0f*0.75f;
+				vec2 Pos = CalcPos(ProjStartPos, Direction, Curvature, Speed, Tick);
+				vec2 NextPos = CalcPos(ProjStartPos, Direction, Curvature, Speed, Tick + 1 / (50.0f*0.3f));
+
+				if (Collision()->IntersectLine(Pos, NextPos, NULL, NULL))
+					break;
+
+				IGraphics::CLineItem Line = IGraphics::CLineItem(NextPos.x, NextPos.y, Pos.x, Pos.y);
+				Graphics()->LinesDraw(&Line, 1);
+			}
+		}
+
+		Graphics()->LinesEnd();
+	}
+	else if(Weapon == WEAPON_RIFLE || Weapon == WEAPON_GUN || Weapon == WEAPON_SHOTGUN)
+	{
+		float MaxDistance = 600.0f;
+		if(Weapon == WEAPON_RIFLE)
+			MaxDistance = m_pClient->m_Tuning.m_LaserReach;
+
+		for (int i = 0; i < s_NumDirection; i++)
+			m_DirectionHit[i] = -1;
+
+		int DirectionID = 0;
+		for (float i = 0; i < 2 * pi; i += 0.01f, DirectionID++)
+		{
+			vec2 Direction = normalize(vec2(sinf(i), cosf(i)));
+			vec2 EndPos = LocalPos + Direction * MaxDistance;
+			Collision()->IntersectLine(LocalPos, EndPos, NULL, &EndPos);
+
+			for (int i = 0; i < MAX_CLIENTS; i++)
+			{
+				CWorldCore TempWorld;
+				CNetObj_CharacterCore TempCore;
+				if (!m_pClient->m_Snap.m_aCharacters[i].m_Active || i == LocalID || (isTeam && LocalTeam == m_pClient->m_Snap.m_paPlayerInfos[i]->m_Team))
+					continue;
+
+				m_pClient->m_aClients[i].m_Predicted.Write(&TempCore);
+				vec2 EnemyPos = vec2(TempCore.m_X, TempCore.m_Y);
+
+				float Len = distance(LocalPos, EnemyPos);
+				if (Len > MaxDistance)
+					continue;
+
+				vec2 Closest = closest_point_on_line(LocalPos, EndPos, EnemyPos);
+
+				if (distance(Closest, EnemyPos) < 12.0f)
+				{
+					m_DirectionHit[DirectionID] = Len;
 					break;
 				}
+
 			}
-
-			if(m_DirectionHit[DirectionID] != -1)
-				break;
 		}
-	}
 
-	Graphics()->TextureSet(-1);
-	Graphics()->LinesBegin();
+		Graphics()->TextureSet(-1);
+		Graphics()->LinesBegin();
 	
-	DirectionID = 0;
-	for (float i = 0; i < 2 * pi; i += 0.01f, DirectionID++)
-	{
-		vec2 Direction = normalize(vec2(sinf(i), cosf(i)));
-		if (m_DirectionHit[DirectionID] == -1)
-			continue;
-
-		float Color = m_DirectionHit[DirectionID]/50.0f;
-		Graphics()->SetColor(1- Color, 0.1f, 0.1f, 0.75f);
-
-		for (int d = 0; d < 30; d++)
+		DirectionID = 0;
+		for (float i = 0; i < 2 * pi; i += 0.01f, DirectionID++)
 		{
-			float Tick = d / (50.0f*0.3f);
-			vec2 ProjStartPos = LocalPos + Direction*28.0f*0.75f;
-			vec2 Pos = CalcPos(ProjStartPos, Direction, Curvature, Speed, Tick);
-			vec2 NextPos = CalcPos(ProjStartPos, Direction, Curvature, Speed, Tick + 1 / (50.0f*0.3f));
+			vec2 Direction = normalize(vec2(sinf(i), cosf(i)));
+			if (m_DirectionHit[DirectionID] == -1)
+				continue;
 
-			if (Collision()->IntersectLine(Pos, NextPos, NULL, NULL))
-				break;
+			float Color = m_DirectionHit[DirectionID]/MaxDistance;
+			Graphics()->SetColor(1- Color, 0.1f, 0.1f, 0.75f);
+			vec2 EndPos = LocalPos + Direction * MaxDistance;
 
-			IGraphics::CLineItem Line = IGraphics::CLineItem(NextPos.x, NextPos.y, Pos.x, Pos.y);
+			Collision()->IntersectLine(LocalPos, EndPos, NULL, &EndPos);
+
+			IGraphics::CLineItem Line = IGraphics::CLineItem(EndPos.x, EndPos.y, LocalPos.x, LocalPos.y);
 			Graphics()->LinesDraw(&Line, 1);
 		}
-	}
 
-	Graphics()->LinesEnd();
+		Graphics()->LinesEnd();
+	}
 }
 
 bool CControls::OnMouseMove(float x, float y)
@@ -409,11 +488,17 @@ void CControls::SetInput()
 	case FAKEINPUT_AUTOUNFREEZE: AutoUnfreeze(); break;
 	case FAKEINPUT_GRENADEAIM: GrenadeAim(); break;
 	case FAKEINPUT_STEP: Step(); break;
+	case FAKEINPUT_VIBRATE: Vibrate(); break;
 	};
 
 	if(g_Config.m_PdlBlockHelp)
 	{
 		m_pClient->m_pBlockHelp->SnapInput(&m_InputData);
+	}
+	else if(g_Config.m_PdlAutorunActive)
+	{
+		int LocalID = m_pClient->m_Snap.m_LocalClientID;
+		m_pClient->m_pAutoRun->SnapInput(&m_InputData, LocalID, -1);
 	}
 
 	if(g_Config.m_PdlGrenadeDodge)
@@ -1245,11 +1330,17 @@ void CControls::GrenadeAim()
 
 	InputNormal();
 
+	bool isTeam = false;
+
+	if(m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_TEAMS)
+		isTeam = true;
+
 	int MyAngle = GetAngle(vec2(m_InputData.m_TargetX, m_InputData.m_TargetY)) * 180.0f / pi + 90;
 	bool FoundVeryClosePlayer = false;
 	{
 		CNetObj_CharacterCore LocalChar;
 		int LocalID = m_pClient->m_Snap.m_LocalClientID;
+		int LocalTeam = m_pClient->m_Snap.m_pLocalInfo->m_Team;
 		if (LocalID >= 0 && LocalID < MAX_CLIENTS && Client()->State() == IClient::STATE_ONLINE)
 		{
 
@@ -1263,7 +1354,7 @@ void CControls::GrenadeAim()
 				CGameClient::CSnapState::CCharacterInfo EnemyChar;
 				const void *pInfo = NULL;
 
-				if (!m_pClient->m_Snap.m_aCharacters[i].m_Active || i == LocalID)
+				if (!m_pClient->m_Snap.m_aCharacters[i].m_Active || i == LocalID || (isTeam && LocalTeam != m_pClient->m_Snap.m_paPlayerInfos[i]->m_Team))
 					continue;
 
 				EnemyChar = m_pClient->m_Snap.m_aCharacters[i];
@@ -1385,4 +1476,21 @@ void CControls::Step()
 			m_InputData.m_Direction = s_SwiftDir;
 		}
 	}
+}
+
+void CControls::Vibrate()
+{
+	static int s_State = 0;
+
+	switch(s_State)
+	{
+		case 0: m_InputData.m_Direction = 1; break;
+		case 1: m_InputData.m_Direction = -1; break;
+		case 2: m_InputData.m_Direction = 0; break;
+		case 3: m_InputData.m_Direction = -1; break;
+		case 4: m_InputData.m_Direction = 1; break;
+		case 5: m_InputData.m_Direction = 0; break;
+	}
+
+	s_State = (s_State +1)%6;
 }

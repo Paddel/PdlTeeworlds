@@ -1,0 +1,21 @@
+const char *SOURCE_BLUR_FRAGMENT =
+
+"#version 120\n"
+"uniform vec2 u_Resolution;\n"
+"uniform float u_IsTex;\n"
+"uniform sampler2D u_Tex;\n"
+"varying vec4 v_Color;\n"
+"const int Radius = 11;\n"
+"vec2 Shift = vec2(1.0/u_Resolution.x, 0);\n"
+"float Filter[Radius] = float[Radius] (0.0402,0.0623,0.0877,0.1120,0.1297,0.1362,0.1297,0.1120,0.0877,0.0623,0.0402);\n"
+"void main(void)\n"
+"{\n"
+"	vec2 TexCoord = gl_TexCoord[0].xy - float(int(Radius/2)) * Shift;\n"
+"	vec4 Color = vec4(0.0, 0.0, 0.0, 0.0);\n"
+"	for(int i = 0; i < Radius; i++)\n"
+"	{\n"
+"		Color += Filter[i] * texture2D(u_Tex, TexCoord);\n"
+"		TexCoord += Shift;\n"
+"	}\n"
+"	gl_FragColor = Color;\n"
+"}\n";

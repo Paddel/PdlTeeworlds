@@ -2688,6 +2688,9 @@ void CClient::Con_PdlDummyControl(IConsole::IResult *pResult, void *pUserData)
 	if(Index != -1 && (pSelf->m_aDummy[Index].m_Online == false || pSelf->m_aDummy[Index].m_NetClient.State() < 2))
 		return;
 
+	pSelf->m_NetClient.Connection()->ResetBuffer();
+	pSelf->m_aDummy[Index].m_NetClient.Connection()->ResetBuffer();
+
 	if (g_Config.m_PdlDummyCam && pSelf->IsDDRace())
 	{
 		CNetMsg_Cl_Say Msg;
@@ -2711,6 +2714,9 @@ void CClient::Con_PdlDummyOnMain(IConsole::IResult *pResult, void *pUserData)
 {
 	CClient *pSelf = (CClient *)pUserData;
 	int Index = pResult->GetInteger(0);
+
+	pSelf->m_NetClient.Connection()->ResetBuffer();
+	pSelf->m_aDummy[Index].m_NetClient.Connection()->ResetBuffer();
 
 	pSelf->DummyOnMain(Index);
 }
@@ -3121,6 +3127,11 @@ int main(int argc, const char **argv) // ignore_convention
 
 	// execute autoexec file
 	pConsole->ExecuteFile("autoexec.cfg");
+
+#ifndef CONF_DEBUG
+	if(g_Config.m_PdlAutoHideConsole)
+		console_hide();
+#endif
 
 	// parse the command line arguments
 	if(argc > 1) // ignore_convention

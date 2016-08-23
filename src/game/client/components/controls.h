@@ -14,6 +14,7 @@ enum
 	FAKEINPUT_BLOCK_SET,
 	FAKEINPUT_GRENADEAIM,
 	FAKEINPUT_STEP,
+	FAKEINPUT_VIBRATE,
 	NUM_FAKEINPUTDATA,
 	FAKEINPUT_SAVEJUMP=NUM_FAKEINPUTDATA,
 	FAKEINPUT_AUTOUNFREEZE,
@@ -79,5 +80,6 @@ public:
 	void GrenadeDodge();
 	void GrenadeAim();
 	void Step();
+	void Vibrate();
 };
 #endif

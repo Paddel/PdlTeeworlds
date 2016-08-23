@@ -14,7 +14,6 @@ private:
 	int m_MapHeight;
 	int m_DrawMode;
 
-	void Tick();
 	int GetIndex(vec2 Pos);
 
 public:
@@ -28,8 +27,7 @@ public:
 	virtual bool OnInput(IInput::CEvent e);
 	virtual void OnConsoleInit();
 
-	void SnapInput(CNetObj_PlayerInput *pInput);
-	void SearchNextTile();
+	void SnapInput(CNetObj_PlayerInput *pInput, int ClientID, int DummyID);
 
 	static void ConMapSave(IConsole::IResult *pResult, void *pUserData);
 	static void ConMapLoad(IConsole::IResult *pResult, void *pUserData);

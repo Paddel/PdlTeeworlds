@@ -43,15 +43,10 @@ void CAutoRun::OnMapLoad()
 		m_pTiles[i].m_Skip = 0;
 		m_pTiles[i].m_Reserved = i;
 	}
-
-	SearchNextTile();
 }
 
 void CAutoRun::OnRender()
 {
-	if(Client()->State() == IClient::STATE_ONLINE && g_Config.m_PdlAutorunActive)
-		Tick();
-
 	if(Client()->State() != IClient::STATE_ONLINE || g_Config.m_PdlAutorunDraw == 0)
 		return;
 
@@ -129,7 +124,6 @@ bool CAutoRun::OnInput(IInput::CEvent e)
 			int Tile = Ny*m_MapWidth+Nx;
 
 			m_pTiles[Tile].m_Index = m_DrawMode;
-			SearchNextTile();
 
 			return true;
 		}
@@ -149,27 +143,71 @@ void CAutoRun::OnConsoleInit()
 	Console()->Register("ar_map_load", "s", CFGFLAG_CLIENT, ConMapLoad, this, "");
 }
 
-void CAutoRun::SearchNextTile()
+/*if(m_pClient->m_PredictedChar.m_Colliding)
+				pInput->m_Jump = 1;*/
+
+
+void CAutoRun::SnapInput(CNetObj_PlayerInput *pInput, int ClientID, int DummyID)
 {
-	//for(int x = 0; x < m_MapWidth; x++)
-	//{
-	//	for(int y = 0; y < m_MapHeight; y++)
-	//	{
-	//		int Nx = clamp(x, 0, m_MapWidth-1);
-	//		int Ny = clamp(y, 0, m_MapHeight-1);
-	//		int c = Ny*m_MapWidth+Nx;
-	//		if(m_pTiles[c].m_Index == 3)
-	//		{//camp tile found
-	//			m_CampPos.x = x*32+16;
-	//			m_CampPos.y = y*32+16;
-	//			m_CampTileFound = true;
-	//			break;
-	//		}
-	//	}
-	//}
+	static int s_Direction = 0;
+	static int64 s_KillTime = 0;
+
+	CNetObj_CharacterCore Character;
+	m_pClient->m_aClients[ClientID].m_Predicted.Write(&Character);
+	vec2 LocalPos = vec2(Character.m_X, Character.m_Y);
+	vec2 LocalVel = vec2(Character.m_VelX, Character.m_VelY);
+
+	int Tile = GetIndex(LocalPos);
+
+	if(m_pClient->m_Snap.m_aCharacters[ClientID].m_Active == false)
+	{
+		s_KillTime = time_get();
+		pInput->m_Fire++;
+		pInput->m_Hook = 0;
+	}
+
+	pInput->m_WantedWeapon = WEAPON_HAMMER;
+
+	if(pInput->m_Jump)
+		pInput->m_Jump = 0;
+
+	if(s_KillTime + time_freq() * 7.0f < time_get())
+		m_pClient->SendKillDummy(DummyID);
+
+	if(s_Direction != 0 && m_pClient->m_aClients[ClientID].m_Predicted.m_Colliding)
+		pInput->m_Jump = 1;
+
+	if(Tile == 1)
+		m_pClient->SendKillDummy(DummyID);
+	if(Tile == 2)
+	{
+		/*if(Character.m_HookState == HOOK_IDLE)
+		{
+			pInput->m_TargetX = 0;
+			pInput->m_TargetY = 1;
+			pInput->m_Hook = 1;
+		}
+		else if(Character.m_HookState == HOOK_RETRACTED)
+			pInput->m_Hook = 0;*/
+
+		s_KillTime = time_get();
+		s_Direction = 0;
+	}
+	if(Tile == 3)
+		s_KillTime = time_get();
+	if(Tile == 4)
+		s_Direction = -1;
+	if(Tile == 5)
+		s_Direction = 1;
+	if(Tile == 6)
+		pInput->m_Jump = 1;
+	
+
+	pInput->m_Direction = s_Direction;
+
 }
 
-void CAutoRun::SnapInput(CNetObj_PlayerInput *pInput)
+/*void CAutoRun::SnapInput(CNetObj_PlayerInput *pInput)
 {
 	static int CampLeaveKillTime = 30.0f;
 	static int LastActive = 0;
@@ -273,19 +311,7 @@ void CAutoRun::SnapInput(CNetObj_PlayerInput *pInput)
 	}
 
 	LastActive = m_pClient->m_Snap.m_aCharacters[LocalID].m_Active;
-}
-
-void CAutoRun::Tick()
-{
-	int LocalID = m_pClient->m_Snap.m_LocalClientID;
-	CNetObj_CharacterCore LocalChar;
-	m_pClient->m_aClients[LocalID].m_Predicted.Write(&LocalChar);
-	vec2 LocalPos = vec2(LocalChar.m_X, LocalChar.m_Y);
-
-	//selfkill
-	if(GetIndex(LocalPos) == 1 && m_pClient->m_Snap.m_aCharacters[LocalID].m_Active)
-		m_pClient->SendKill(-1);
-}
+}*/
 
 int CAutoRun::GetIndex(vec2 Pos)
 {
@@ -330,7 +356,7 @@ void CAutoRun::ConMapLoad(IConsole::IResult *pResult, void *pUserData)
 	IOHANDLE File = pThis->Storage()->OpenFile(aFilename, IOFLAG_READ, IStorage::TYPE_ALL);
 	if(!File)
 	{
-		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "WayBlock", "File not found.");
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Autorun", "File not found.");
 		return;
 	}
 
@@ -356,10 +382,8 @@ void CAutoRun::ConMapLoad(IConsole::IResult *pResult, void *pUserData)
 
 		if(Error)
 		{
-			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "WayBlock", "Map file does not fit!");
+			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Autorun", "Map file does not fit!");
 			break;
 		}
 	}
-
-	pThis->SearchNextTile();
 }

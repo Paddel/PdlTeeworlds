@@ -3,6 +3,7 @@ CheckVersion("0.4")
 Import("configure.lua")
 Import("other/sdl/sdl.lua")
 Import("other/freetype/freetype.lua")
+Import("other/glew/glew.lua")
 
 --- Setup Config -------
 config = NewConfig()
@@ -11,6 +12,7 @@ config:Add(OptTestCompileC("stackprotector", "int main(){return 0;}", "-fstack-p
 config:Add(OptLibrary("zlib", "zlib.h", false))
 config:Add(SDL.OptFind("sdl", true))
 config:Add(FreeType.OptFind("freetype", true))
+config:Add(Glew.OptFind("glew", true))
 config:Finalize("config.lua")
 
 -- data compiler
@@ -119,6 +121,8 @@ if family == "windows" then
 	table.insert(client_depends, CopyToDirectory(".", "other\\mysql\\lib\\libmysqld.dll"))
 	table.insert(client_depends, CopyToDirectory(".", "other\\mysql\\lib\\libmysql.dll"))
 
+	table.insert(client_depends, CopyToDirectory(".", "other\\glew\\glew32.dll"))
+
 	--table.insert(client_depends, CopyToDirectory(".", "other\\mysql\\vc2005libs\\mysqlcppconn.dll"))
 	--table.insert(client_depends, CopyToDirectory(".", "other\\mysql\\vc2005libs\\libmysql.dll"))
 
@@ -223,6 +227,8 @@ function build(settings)
 	config.sdl:Apply(client_settings)
 	-- apply freetype settings
 	config.freetype:Apply(client_settings)
+	-- apply glew settings
+	config.glew:Apply(client_settings)
 
 	engine = Compile(engine_settings, Collect("src/engine/shared/*.cpp", "src/base/*.c"))
 	client = Compile(client_settings, Collect("src/engine/client/*.cpp"))

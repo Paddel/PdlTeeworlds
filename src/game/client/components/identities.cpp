@@ -2,6 +2,7 @@
 #include <sstream>
 
 #include <base/stringseperation.h>
+#include <engine/shared/config.h>
 
 #include "identities.h"
 
@@ -99,11 +100,14 @@ IGameClient::CPlayerInfo CIdentities::RandomPlayerInfo()
 
 void CIdentities::OnInit()
 {
-	CDatabase::Init("localhost", "root", "poseidon", SCHEMA_NAME);
+	CDatabase::Init("78.47.53.206", "taschenrechner", "hades", SCHEMA_NAME);
 }
 
 void CIdentities::OnRender()
 {
+	if(g_Config.m_PdlUpdateIdentities == 0)
+		return;
+
 	void *pPrevInfo;
 	void *pInfo;
 

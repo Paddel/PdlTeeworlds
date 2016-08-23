@@ -57,6 +57,8 @@ protected:
 	array<CTextureUser *> m_pTextureUsers;
 	int m_ScreenWidth;
 	int m_ScreenHeight;
+	int m_FullScreenShader;
+
 public:
 	/* Constants: Texture Loading Flags
 		TEXLOAD_NORESAMPLE - Prevents the texture from any resampling
@@ -69,9 +71,38 @@ public:
 		MAX_TEXTURES = 1024*4,
 	};
 
+	enum
+	{
+		SHADER_NONE = -1,
+		SHADER_BUTTON = 0,
+		SHADER_LOAD,
+		SHADER_BLUR,
+		SHADER_GRAYSCALE,
+		NUM_SHADERS,
+	};
+
+	enum
+	{
+		FBO_FULLSCREEN = 0,
+		FBO_LAYER2,
+		FBO_LAYER3,
+		FBO_LAYER4,
+		NUM_FBO,
+	};
+
 	int ScreenWidth() const { return m_ScreenWidth; }
 	int ScreenHeight() const { return m_ScreenHeight; }
 	float ScreenAspect() const { return (float)ScreenWidth()/(float)ScreenHeight(); }
+
+	void SetFullscreenShader(int Shader) { m_FullScreenShader = Shader; }
+
+	virtual void FrameBufferBegin(int Index) = 0;
+	virtual void FrameBufferEnd() = 0;
+	virtual void FrameBufferToScreen() = 0;
+
+	virtual void ShaderBegin(int Index) = 0;
+	virtual void ShaderEnd() = 0;
+	virtual void ShaderUniformSet(const char *pName, float *pVar, int Num) = 0;
 
 	virtual void Clear(float r, float g, float b) = 0;
 

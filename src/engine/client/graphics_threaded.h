@@ -372,6 +372,14 @@ class CGraphics_Threaded : public IEngineGraphics
 public:
 	CGraphics_Threaded();
 
+	virtual void FrameBufferBegin(int Index) {}
+	virtual void FrameBufferEnd() {}
+	virtual void FrameBufferToScreen() {}
+
+	virtual void ShaderBegin(int Index) {}
+	virtual void ShaderEnd() {}
+	virtual void ShaderUniformSet(const char *pName, float *pVar, int Num) {}
+
 	virtual void ClipEnable(int x, int y, int w, int h);
 	virtual void ClipDisable();
 

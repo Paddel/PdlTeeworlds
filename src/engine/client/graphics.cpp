@@ -5,8 +5,11 @@
 #include <base/math.h>
 #include <base/tl/threading.h>
 
+#define NO_SDL_GLEXT
+#include <glew.h>
 #include "SDL.h"
 #include "SDL_opengl.h"
+#include "shaders.h"
 
 #include <base/system.h>
 #include <engine/external/pnglite/pnglite.h>
@@ -156,6 +159,9 @@ unsigned char *CGraphics_OpenGL::Rescale(int Width, int Height, int NewWidth, in
 CGraphics_OpenGL::CGraphics_OpenGL()
 {
 	m_NumVertices = 0;
+
+	m_UseShader = false;
+	m_FullScreenShader = SHADER_NONE;
 
 	m_ScreenX0 = 0;
 	m_ScreenY0 = 0;
@@ -788,6 +794,259 @@ void CGraphics_OpenGL::QuadsText(float x, float y, float Size, const char *pText
 	}
 }
 
+void CGraphics_OpenGL::FrameBufferToScreen()
+{
+	float var[2];
+
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);	
+
+	glEnable(GL_TEXTURE_2D);
+	
+	glBindTexture(GL_TEXTURE_2D, m_FrameBufferObjectTexture[FBO_FULLSCREEN]);
+
+	if(m_FullScreenShader != SHADER_NONE)
+	{
+		ShaderBegin(SHADER_GRAYSCALE);
+		var[0] = 1.0f;
+		ShaderUniformSet("u_IsTex", var, 1);
+		var[0] = m_ScreenWidth;
+		var[1] = m_ScreenHeight;
+		ShaderUniformSet("u_Resolution", var, 2);
+	}
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	glOrtho(0, m_ScreenWidth, m_ScreenHeight, 0, 1.0f, 10.f);
+	glClear(0);
+	glBegin(GL_QUADS);
+	//glColor4f(1, 1, 1, 1.0f);
+	glTexCoord2f(0.0f, 1.0f); glVertex3f(0, 0, -5.0f);
+	glTexCoord2f(1.0f, 1.0f); glVertex3f(m_ScreenWidth, 0, -5.0f);
+	glTexCoord2f(1.0f, 0.0f); glVertex3f(m_ScreenWidth, m_ScreenHeight, -5.0f);
+	glTexCoord2f(0.0f, 0.0f); glVertex3f(0, m_ScreenHeight, -5.0f);
+	glEnd();
+	glFlush(); //bottleneck ?
+	//glBindTexture(GL_TEXTURE_2D, 0); // Unbind any textures 
+
+	if(m_FullScreenShader != SHADER_NONE)	
+		ShaderEnd();
+
+	glDisable(GL_TEXTURE_2D);
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_FrameBufferObject[FBO_FULLSCREEN]);
+
+}
+
+void CGraphics_OpenGL::FrameBufferBegin(int Index)
+{
+	if(Index > NUM_FBO || Index < 0)
+	{
+		dbg_msg("gfx", "failed to set framebuffer (invalid index)");
+		return;
+	}
+	m_FrameBufferObjectId = Index;
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_FrameBufferObject[m_FrameBufferObjectId]);
+}
+
+void CGraphics_OpenGL::FrameBufferEnd()
+{
+	//if(g_Config.m_GfxFBO)
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_FrameBufferObject[FBO_FULLSCREEN]);
+	//else
+		//glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, m_FrameBufferObjectTexture[m_FrameBufferObjectId]);
+
+	glBegin(GL_QUADS);
+	glColor4f(1, 1, 1, 1.0f);
+	glTexCoord2f(0.0f, 1.0f); glVertex3f(0, 0, -5.0f);
+	glTexCoord2f(1.0f, 1.0f); glVertex3f(m_ScreenX1, 0, -5.0f);
+	glTexCoord2f(1.0f, 0.0f); glVertex3f(m_ScreenX1, m_ScreenY1, -5.0f);
+	glTexCoord2f(0.0f, 0.0f); glVertex3f(0, m_ScreenY1, -5.0f);
+	glEnd();
+	glFlush();
+
+	glDisable(GL_TEXTURE_2D);
+}
+
+void CGraphics_OpenGL::FrameBufferInit()
+{
+
+	for(int i = 0; i < NUM_FBO; i++)
+	{
+		//FrameBufferDepthBufferInit(int i); // no depth needed
+		FrameBufferTextureInit(i);
+
+
+		glGenFramebuffersEXT(1, &m_FrameBufferObject[i]);
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_FrameBufferObject[i]);
+		glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, m_FrameBufferObjectTexture[i], 0);
+
+		//glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, m_FrameBufferObjectDepth);
+
+		GLenum Status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+		if(Status != GL_FRAMEBUFFER_COMPLETE_EXT)
+			dbg_msg("gfx", "failed to create framebuffer object %d", i);
+
+		Clear(1, 1, 1);
+
+	}
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+}
+
+void CGraphics_OpenGL::FrameBufferDepthBufferInit(int Index)
+{
+	glGenRenderbuffersEXT(1, &m_FrameBufferObjectDepth[Index]);
+	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, m_FrameBufferObjectDepth[Index]);
+	glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, m_ScreenWidth, m_ScreenHeight);
+	glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, m_FrameBufferObjectDepth[Index]);
+	glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, 0);
+}  
+
+void CGraphics_OpenGL::FrameBufferTextureInit(int Index)
+{
+	glGenTextures(1, &m_FrameBufferObjectTexture[Index]);
+	glBindTexture(GL_TEXTURE_2D, m_FrameBufferObjectTexture[Index]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, m_ScreenWidth, m_ScreenHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);  
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);  
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);  
+	glBindTexture(GL_TEXTURE_2D, 0);  
+}
+
+void CGraphics_OpenGL::ShaderBegin(int Index)
+{
+	if (!m_UseShader || Index > NUM_SHADERS || Index < 0)
+		return;
+
+	m_CurrentShader = Index;
+	glUseProgramObjectARB(m_aShaders[m_CurrentShader].m_ProgramHandle);
+}
+
+void CGraphics_OpenGL::ShaderEnd()
+{
+	if (!m_UseShader)
+		return;
+	glUseProgramObjectARB(0);
+}
+
+void CGraphics_OpenGL::ShaderUniformSet(const char *pName, float *pVar, int Num)
+{
+	if (!m_UseShader || m_aShaders[m_CurrentShader].m_Active == false)
+		return;
+
+	int VarHandler = glGetUniformLocation(m_aShaders[m_CurrentShader].m_ProgramHandle, pName);
+	switch (Num)
+	{
+	case 1: glUniform1fARB(VarHandler, pVar[0]); break;
+	case 2: glUniform2fARB(VarHandler, pVar[0], pVar[1]); break;
+	case 3: glUniform3fARB(VarHandler, pVar[0], pVar[1], pVar[2]); break;
+	case 4: glUniform4fARB(VarHandler, pVar[0], pVar[1], pVar[2], pVar[3]); break;
+	}	
+}
+
+void CGraphics_OpenGL::InitShader()
+{
+	char *aExt = (char*)glGetString(GL_EXTENSIONS);
+
+	if (str_find_nocase(aExt, "GL_ARB_shader_objects") &&
+		str_find_nocase(aExt, "GL_ARB_shading_language_100") &&
+		str_find_nocase(aExt, "GL_ARB_vertex_shader") &&
+		str_find_nocase(aExt, "GL_ARB_fragment_shader"))
+	{
+		glAttachObjectARB = (PFNGLATTACHOBJECTARBPROC)SDL_GL_GetProcAddress("glAttachObjectARB");
+		glCompileShaderARB = (PFNGLCOMPILESHADERARBPROC)SDL_GL_GetProcAddress("glCompileShaderARB");
+		glCreateProgramObjectARB = (PFNGLCREATEPROGRAMOBJECTARBPROC)SDL_GL_GetProcAddress("glCreateProgramObjectARB");
+		glCreateShaderObjectARB = (PFNGLCREATESHADEROBJECTARBPROC)SDL_GL_GetProcAddress("glCreateShaderObjectARB");
+		glDeleteObjectARB = (PFNGLDELETEOBJECTARBPROC)SDL_GL_GetProcAddress("glDeleteObjectARB");
+		glGetInfoLogARB = (PFNGLGETINFOLOGARBPROC)SDL_GL_GetProcAddress("glGetInfoLogARB");
+		glGetObjectParameterivARB = (PFNGLGETOBJECTPARAMETERIVARBPROC)SDL_GL_GetProcAddress("glGetObjectParameterivARB");
+		glGetUniformLocationARB = (PFNGLGETUNIFORMLOCATIONARBPROC)SDL_GL_GetProcAddress("glGetUniformLocationARB");
+		glLinkProgramARB = (PFNGLLINKPROGRAMARBPROC)SDL_GL_GetProcAddress("glLinkProgramARB");
+		glShaderSourceARB = (PFNGLSHADERSOURCEARBPROC)SDL_GL_GetProcAddress("glShaderSourceARB");
+		glUniform1iARB = (PFNGLUNIFORM1IARBPROC)SDL_GL_GetProcAddress("glUniform1iARB");
+		glUseProgramObjectARB = (PFNGLUSEPROGRAMOBJECTARBPROC)SDL_GL_GetProcAddress("glUseProgramObjectARB");
+		glGetProgramivARB = (PFNGLGETPROGRAMIVARBPROC)SDL_GL_GetProcAddress("glGetProgramivARB");
+		glGetProgramInfoLog = (PFNGLGETPROGRAMINFOLOGPROC)SDL_GL_GetProcAddress("glGetProgramInfoLog");
+		glUniform1fARB = (PFNGLUNIFORM1FARBPROC)SDL_GL_GetProcAddress("glUniform1fARB");
+		glUniform2fARB = (PFNGLUNIFORM2FARBPROC)SDL_GL_GetProcAddress("glUniform2fARB");
+		glUniform3fARB = (PFNGLUNIFORM3FARBPROC)SDL_GL_GetProcAddress("glUniform3fARB");
+		glUniform4fARB = (PFNGLUNIFORM4FARBPROC)SDL_GL_GetProcAddress("glUniform4fARB");
+		glGetUniformLocationARB = (PFNGLGETUNIFORMLOCATIONARBPROC)SDL_GL_GetProcAddress("glGetUniformLocationARB");
+
+		if (glAttachObjectARB &&
+			glCompileShaderARB &&
+			glCreateProgramObjectARB &&
+			glCreateShaderObjectARB &&
+			glDeleteObjectARB &&
+			glGetInfoLogARB &&
+			glGetObjectParameterivARB &&
+			glGetUniformLocationARB &&
+			glLinkProgramARB &&
+			glShaderSourceARB &&
+			glUniform1iARB &&
+			glUseProgramObjectARB &&
+			glGetProgramivARB &&
+			glUniform1fARB &&
+			glUniform2fARB &&
+			glUniform3fARB &&
+			glUniform4fARB &&
+			glGetUniformLocationARB
+			)
+			m_UseShader = true;
+	}
+
+	if (m_UseShader == false)
+		return;
+
+	for (int i = 1; i < NUM_SHADERS; i++)
+		m_aShaders[i].m_Active = false;
+
+	LoadShader(SHADER_BUTTON, SOURCE_BUTTON_VERTEX, SOURCE_BUTTON_FRAGMENT);
+	LoadShader(SHADER_LOAD, SOURCE_LOAD_VERTEX, SOURCE_LOAD_FRAGMENT);
+	LoadShader(SHADER_BLUR, SOURCE_BLUR_VERTEX, SOURCE_BLUR_FRAGMENT);
+	LoadShader(SHADER_GRAYSCALE, SOURCE_GRAYSCALE_VERTEX, SOURCE_GRAYSCALE_FRAGMENT);
+}
+
+void CGraphics_OpenGL::LoadShader(int Shader, const char *vs, const char *fs)
+{
+	if (m_UseShader == false)
+		return;
+
+	GLenum vsHandle, fsHandle, spHandle; //vertex- and fragment(pixel)shader, shaderprogramhandle
+	int Linked = 0;
+	char aError[4096];
+
+	spHandle = glCreateProgramObjectARB();
+	vsHandle = glCreateShaderObjectARB(GL_VERTEX_SHADER);
+	fsHandle = glCreateShaderObjectARB(GL_FRAGMENT_SHADER);
+
+	glShaderSourceARB(vsHandle, 1, &vs, NULL);
+	glShaderSourceARB(fsHandle, 1, &fs, NULL);
+	glCompileShaderARB(vsHandle);
+	glCompileShaderARB(fsHandle);
+	glAttachObjectARB(spHandle, vsHandle);
+	glAttachObjectARB(spHandle, fsHandle);
+	glLinkProgramARB(spHandle);
+
+	glGetProgramivARB(spHandle, GL_LINK_STATUS, &Linked);
+	if (!Linked)
+	{
+		glGetProgramInfoLog(spHandle, sizeof(aError), 0, aError);
+		if (strlen(aError) > 0)
+		{
+			dbg_msg("Shader link failed", aError);
+			return;
+		}
+	}
+
+	m_aShaders[Shader].m_ProgramHandle = spHandle;
+	m_aShaders[Shader].m_VertexHandle = vsHandle;
+	m_aShaders[Shader].m_FragmentHandle = fsHandle;
+	m_aShaders[Shader].m_Active = true;
+}
+
 int CGraphics_OpenGL::Init()
 {
 	m_pStorage = Kernel()->RequestInterface<IStorage>();
@@ -823,6 +1082,18 @@ int CGraphics_OpenGL::Init()
 	};
 
 	m_InvalidTexture = LoadTextureRaw(4,4,CImageInfo::FORMAT_RGBA,aNullTextureData,CImageInfo::FORMAT_RGBA,TEXLOAD_NORESAMPLE);
+
+	glewInit();
+
+	dbg_msg("glversion", (char*)glGetString(GL_VERSION));
+
+	if(!GLEW_VERSION_2_1) {
+		dbg_msg("glew", "Error: OpenGL 2.1 not available");
+		return false;
+	}
+
+	FrameBufferInit();
+	InitShader();
 
 	return 0;
 }
@@ -1019,7 +1290,21 @@ void CGraphics_SDL::Swap()
 		m_DoScreenshot = false;
 	}
 
+	FrameBufferToScreen();
 	SDL_GL_SwapBuffers();
+
+	// clear buffers after rendering
+	for(int i = 0; i < NUM_FBO; i++)
+	{
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_FrameBufferObject[i]);
+		Clear(1, 1, 1);
+	}
+
+
+	//if(g_Config.m_GfxFBO)
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, m_FrameBufferObject[FBO_FULLSCREEN]);
+	//else
+		//glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
 	if(g_Config.m_GfxFinish)
 		glFinish();

@@ -645,6 +645,8 @@ void CPlayers::OnRender()
 		}
 	}
 
+
+	m_PlayerCount = 0;
 	// render other players in two passes, first pass we render the other, second pass we render our self
 	for(int p = 0; p < 4; p++)
 	{
@@ -684,9 +686,13 @@ void CPlayers::OnRender()
 					RenderHook(&PrevChar, &CurChar,	(const CNetObj_PlayerInfo *)pPrevInfo, (const CNetObj_PlayerInfo *)pInfo);
 				else
 					RenderPlayer(&PrevChar,	&CurChar, (const CNetObj_PlayerInfo *)pPrevInfo, (const CNetObj_PlayerInfo *)pInfo);
+
+				m_PlayerCount++;
 			}
 		}
 	}
+
+	m_PlayerCount /= 2;
 }
 
 void CPlayers::InitTextures()

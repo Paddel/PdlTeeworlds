@@ -329,6 +329,8 @@ public:
 	virtual void OnDemoPlayerSnapshot(void *pData, int Size);
 	virtual void OnDemoPlayerMessage(void *pData, int Size);
 
+	virtual int AckGameTick() { return m_AckGameTick; }
+
 	void Update();
 
 	void RegisterInterfaces();

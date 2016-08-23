@@ -50,6 +50,9 @@ class CGameClient : public IGameClient, public CTextureUser
 	class CCollision m_Collision;
 	CUI m_UI;
 
+	bool m_DummyAutorun;
+	void HandleDummyAutorun();
+
 	void DispatchInput();
 	void ProcessEvents();
 	void UpdatePositions();
@@ -61,6 +64,8 @@ class CGameClient : public IGameClient, public CTextureUser
 
 	static void ConTeam(IConsole::IResult *pResult, void *pUserData);
 	static void ConKill(IConsole::IResult *pResult, void *pUserData);
+	static void ConShowAll(IConsole::IResult *pResult, void *pUserData);
+	static void ConDummyAutorun(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConDummyinfoName(IConsole::IResult *pResult, void *pUserData);
 	static void ConDummyinfoClan(IConsole::IResult *pResult, void *pUserData);
@@ -99,6 +104,10 @@ public:
 	bool m_NewTick;
 	bool m_NewPredictedTick;
 	int m_FlagDropTick[2];
+
+	bool m_LastShowAll;
+	bool m_ShowAll;
+	int64 m_LastShowAllUpdate;
 
 	// TODO: move this
 	CTuningParams m_Tuning;
@@ -174,6 +183,7 @@ public:
 	{
 		CPlayerInfo m_PlayerInfo;
 		int m_ClientID;
+		CNetObj_PlayerInput m_InputData;
 
 		//	int m_SnappedID;
 	} m_aDummyData[MAX_DUMMIES];
@@ -264,12 +274,15 @@ public:
 
 	virtual void InitTextures();
 
+	bool ShowAllPlayers();
+
 
 	// actions
 	// TODO: move these
 	void SendSwitchTeam(int Team);
 	void SendInfo(bool Start);
 	void SendKill(int ClientID);
+	void SendKillDummy(int DummyID);
 
 	// pointers to all systems
 	class CGameConsole *m_pGameConsole;

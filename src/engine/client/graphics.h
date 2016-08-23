@@ -38,6 +38,14 @@ protected:
 
 	bool m_RenderEnable;
 
+	int m_CurrentShader;
+	bool m_UseShader;
+
+	GLuint m_FrameBufferObject[NUM_FBO]; 
+	GLuint m_FrameBufferObjectDepth[NUM_FBO];
+	GLuint m_FrameBufferObjectTexture[NUM_FBO];
+	int m_FrameBufferObjectId;
+
 	float m_Rotation;
 	int m_Drawing;
 	bool m_DoScreenshot;
@@ -66,10 +74,33 @@ protected:
 	void AddVertices(int Count);
 	void Rotate4(const CPoint &rCenter, CVertex *pPoints);
 
+	void InitShader();
+	void LoadShader(int Shader, const char *vs, const char *fs);
+
+	struct
+	{
+		bool m_Active;
+		int m_ProgramHandle;
+		int m_VertexHandle;
+		int m_FragmentHandle;
+	} m_aShaders[NUM_SHADERS];
+
 	static unsigned char Sample(int w, int h, const unsigned char *pData, int u, int v, int Offset, int ScaleW, int ScaleH, int Bpp);
 	static unsigned char *Rescale(int Width, int Height, int NewWidth, int NewHeight, int Format, const unsigned char *pData);
 public:
 	CGraphics_OpenGL();
+
+	virtual void FrameBufferBegin(int Index);
+	virtual void FrameBufferEnd();
+	virtual void FrameBufferToScreen();
+
+	virtual void FrameBufferInit();
+	virtual void FrameBufferDepthBufferInit(int Index);
+	virtual void FrameBufferTextureInit(int Index);
+
+	virtual void ShaderBegin(int Index);
+	virtual void ShaderEnd();
+	virtual void ShaderUniformSet(const char *pName, float *pVar, int Num);
 
 	virtual void ClipEnable(int x, int y, int w, int h);
 	virtual void ClipDisable();

@@ -1871,6 +1871,35 @@ void CMenus::DoMainButtons()
 	Graphics()->QuadsDrawTL(aQuadItem, NUM_MAINBUTTONS);
 	Graphics()->QuadsEnd();
 
+	//for(int i = 0; i < NUM_MAINBUTTONS; i++)
+	{
+		/*int i = 0;
+		int ScaleSizeW = ButtonW*m_aMainButtons[i].m_Scale-ButtonW;
+		int ScaleSizeH = ButtonH*m_aMainButtons[i].m_Scale-ButtonH;
+		float ButtonWidth = ButtonW+ScaleSizeW;
+		float ButtonHeight = ButtonH+ScaleSizeH*2.0f;
+		float aVar[4];
+		Graphics()->ShaderBegin(IGraphics::SHADER_BUTTON);
+
+		aVar[0] = 1000;
+		aVar[1] = 1000;
+		Graphics()->ShaderUniformSet("u_Resolution", aVar, 2);
+
+		static float s_Move;
+		s_Move += 0.005f;
+		aVar[0] = s_Move;
+		Graphics()->ShaderUniformSet("u_Time", aVar, 1);
+
+		Graphics()->TextureSet(-1);
+		Graphics()->QuadsBegin();
+			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+			Graphics()->QuadsDrawTL(&IGraphics::CQuadItem(m_aMainButtons[i].m_Pos.x-ScaleSizeW*0.5f, m_aMainButtons[i].m_Pos.y-ScaleSizeH*0.5f, ButtonWidth, ButtonHeight), 1);
+		Graphics()->QuadsEnd();
+
+		Graphics()->ShaderEnd();*/
+	}
+
+
 	//Graphics()->MapScreen(Screen.x, Screen.y, Screen.w, Screen.h);
 
 	CUIRect Text;

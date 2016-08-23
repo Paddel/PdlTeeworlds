@@ -76,6 +76,8 @@ public:
 	inline float GameTickTime() const { return m_GameTickTime; }
 	inline int GameTickSpeed() const { return m_GameTickSpeed; }
 
+	virtual int AckGameTick() = 0;
+
 	// other time access
 	inline float RenderFrameTime() const { return m_RenderFrameTime; }
 	inline float LocalTime() const { return m_LocalTime; }

@@ -1,7 +1,7 @@
 compiler.driver = 'cl'
 compiler.c_compiler = false
 compiler.cxx_compiler = false
-stackprotector.value = false
+stackprotector.value = true
 zlib.value = false
 zlib.include_path = false
 sdl.value = true
@@ -11,3 +11,6 @@ sdl.use_osxframework = false
 freetype.value = true
 freetype.use_ftconfig = false
 freetype.use_win32lib = true
+glew.value = true
+glew.use_glewconfig = false
+glew.use_win32lib = true

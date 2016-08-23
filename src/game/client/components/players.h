@@ -22,8 +22,11 @@ class CPlayers : public CComponent, public CTextureUser
 	);
 
 	void DoBlockInfo();
+	int m_PlayerCount;
 
 public:
+	int GetPlayerCount() { return m_PlayerCount; }
+
 	virtual void OnRender();
 	virtual void InitTextures();
 	virtual void OnInit();
