@@ -270,7 +270,7 @@ void CGameClient::InitTextures()
 		TextRender()->SetDefaultFont(pDefaultFont);
 	}
 	if(!pDefaultFont)
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "gameclient", "failed to load font. filename='fonts/DejaVuSans.ttf'");
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "gameclient", "failed to load font. filename='fonts/DejaVuSans.ttf'");
 
 	File = Storage()->OpenFile("fonts/Bubblegum.ttf", IOFLAG_READ, IStorage::TYPE_ALL, aFilename, sizeof(aFilename));
 	if(File)
@@ -280,7 +280,7 @@ void CGameClient::InitTextures()
 		TextRender()->SetBubbleFont(pBubbleFont);
 	}
 	if(!pBubbleFont)
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "gameclient", "failed to load font. filename='fonts/Bubblegum.ttf'");
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "gameclient", "failed to load font. filename='fonts/Bubblegum.ttf'");
 
 	// setup load amount// load textures
 	for(int i = 0; i < g_pData->m_NumImages; i++)
@@ -329,7 +329,7 @@ void CGameClient::OnInit()
 		TextRender()->SetDefaultFont(pDefaultFont);
 	}
 	if(!pDefaultFont)
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "gameclient", "failed to load font. filename='fonts/DejaVuSans.ttf'");
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "gameclient", "failed to load font. filename='fonts/DejaVuSans.ttf'");
 
 	File = Storage()->OpenFile("fonts/Bubblegum.ttf", IOFLAG_READ, IStorage::TYPE_ALL, aFilename, sizeof(aFilename));
 	if(File)
@@ -339,7 +339,7 @@ void CGameClient::OnInit()
 		TextRender()->SetBubbleFont(pBubbleFont);
 	}
 	if(!pBubbleFont)
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "gameclient", "failed to load font. filename='fonts/Bubblegum.ttf'");
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "gameclient", "failed to load font. filename='fonts/Bubblegum.ttf'");
 
 	// init all components
 	for(int i = m_All.m_Num-1; i >= 0; --i)
@@ -358,7 +358,7 @@ void CGameClient::OnInit()
 	int64 End = time_get();
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "initialisation finished after %.2fms", ((End-Start)*1000)/(float)time_freq());
-	Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "gameclient", aBuf);
+	Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, IConsole::OUTPUTTYPE_STANDARD, "gameclient", aBuf);
 
 	m_ServerMode = SERVERMODE_PURE;
 }
@@ -832,7 +832,7 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker)
 	{
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "dropped weird message '%s' (%d), failed on '%s'", m_NetObjHandler.GetMsgName(MsgId), MsgId, m_NetObjHandler.FailedMsgOn());
-		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "client", aBuf);
+		Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, IConsole::OUTPUTTYPE_ERROR, "client", aBuf);
 		return;
 	}
 
@@ -896,7 +896,7 @@ void CGameClient::OnStartGame()
 
 void CGameClient::OnRconLine(const char *pLine)
 {
-	m_pGameConsole->PrintLine(CGameConsole::CONSOLETYPE_REMOTE, pLine);
+	m_pGameConsole->PrintLine(CGameConsole::CONSOLETYPE_REMOTE, pLine, IConsole::OUTPUTTYPE_STANDARD);
 	m_pPlayerCollection->OnRconLine(pLine);
 }
 
@@ -966,7 +966,7 @@ void CGameClient::OnNewSnapshot()
 				{
 					char aBuf[256];
 					str_format(aBuf, sizeof(aBuf), "invalidated index=%d type=%d (%s) size=%d id=%d", Index, Item.m_Type, m_NetObjHandler.GetObjName(Item.m_Type), Item.m_DataSize, Item.m_ID);
-					Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
+					Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, IConsole::OUTPUTTYPE_ERROR, "game", aBuf);
 				}
 				Client()->SnapInvalidateItem(IClient::SNAP_CURRENT, Index);
 			}
@@ -1341,13 +1341,13 @@ void CGameClient::PredictSnap(CSnapState *pSnap)
 
 		if(mem_comp(&Before, &Now, sizeof(CNetObj_CharacterCore)) != 0)
 		{
-			Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client", "prediction error");
+			Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, IConsole::OUTPUTTYPE_ERROR, "client", "prediction error");
 			for(unsigned i = 0; i < sizeof(CNetObj_CharacterCore)/sizeof(int); i++)
 				if(((int *)&Before)[i] != ((int *)&Now)[i])
 				{
 					char aBuf[256];
 					str_format(aBuf, sizeof(aBuf), "	%d %d %d (%d %d)", i, ((int *)&Before)[i], ((int *)&Now)[i], ((int *)&BeforePrev)[i], ((int *)&NowPrev)[i]);
-					Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client", aBuf);
+					Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, IConsole::OUTPUTTYPE_ERROR, "client", aBuf);
 				}
 		}
 	}
@@ -1438,6 +1438,32 @@ void CGameClient::OnDummyOnMain(int Dummy)
 	int Buf = m_RealClientID;
 	m_RealClientID = m_Snap.m_LocalClientID = m_aDummyData[Dummy].m_ClientID;
 	m_aDummyData[Dummy].m_ClientID = Buf;
+}
+
+bool CGameClient::PlayerOnline(CPlayerInfo &Info)
+{
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(m_aClients[i].m_aName[0] == '\0')
+			continue;
+
+		//first check integers
+		if(m_aClients[i].m_Country != Info.m_Country ||
+			m_aClients[i].m_UseCustomColor != Info.m_UseCustomColor ||
+			m_aClients[i].m_ColorBody != Info.m_ColorBody ||
+			m_aClients[i].m_ColorFeet != Info.m_ColorFeet)
+			continue;
+
+		//then strings
+		if(str_comp(m_aClients[i].m_aName, Info.m_aName) != 0 ||
+			str_comp(m_aClients[i].m_aClan, Info.m_aClan) != 0 ||
+			str_comp(m_aClients[i].m_aSkinName, Info.m_aSkin) != 0)
+			continue;
+
+		return true;
+	}
+
+	return false;
 }
 
 void CGameClient::RenderSecondaryGame(CUIRect Rect, vec2 Center, vec2 CenterShift, float Zoom)
@@ -1582,7 +1608,7 @@ void CGameClient::ConShowAll(IConsole::IResult *pResult, void *pUserData)
 	{
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "ShowAll=%i RenderingAll=%i NumPlayersRendering=%i .. refreshing", pSelf->m_ShowAll, pSelf->ShowAllPlayers(), gs_Players.GetPlayerCount());
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "gameclient", aBuf);
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "gameclient", aBuf);
 
 		pSelf->m_LastShowAll = !pSelf->m_LastShowAll;
 	}
@@ -1645,7 +1671,7 @@ void CGameClient::ConDummyinfoCostumColor(IConsole::IResult *pResult, void *pUse
 	if(DummyID < 0 || DummyID >= MAX_DUMMIES)
 		return;
 
-	pGameClient->m_aDummyData[DummyID].m_PlayerInfo.m_UseCostumColor = pResult->GetInteger(1);
+	pGameClient->m_aDummyData[DummyID].m_PlayerInfo.m_UseCustomColor = pResult->GetInteger(1);
 }
 
 void CGameClient::ConDummyinfoColorBody(IConsole::IResult *pResult, void *pUserData)

@@ -196,6 +196,8 @@ public:
 	virtual void OnDummyOnJoin(int Dummy);
 	virtual void OnDummyOnMain(int Dummy);
 
+	bool PlayerOnline(CPlayerInfo &Info);
+
 	// client data
 	struct CClientData
 	{

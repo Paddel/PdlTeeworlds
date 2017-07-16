@@ -20,7 +20,7 @@ void CIdentities::FillPlayerInfo(IGameClient::CPlayerInfo &Info, CGameClient::CC
 	str_copy(Info.m_aClan, Data.m_aClan, sizeof(Info.m_aClan));
 	Info.m_Country = Data.m_Country;
 	str_copy(Info.m_aSkin, Data.m_aSkinName, sizeof(Info.m_aSkin));
-	Info.m_UseCostumColor = Data.m_UseCustomColor;
+	Info.m_UseCustomColor = Data.m_UseCustomColor;
 	Info.m_ColorBody = Data.m_ColorBody;
 	Info.m_ColorFeet = Data.m_ColorFeet;
 }
@@ -49,23 +49,23 @@ void CIdentities::SavePlayerItem(int ClientID)
 	char aQuery[QUERY_MAX_STR_LEN];
 	mem_zero(&aQuery, sizeof(aQuery));
 	str_format(aQuery, sizeof(aQuery), "REPLACE INTO %s.%s(name, clan, country, skin, costumcolor, color_body, color_feet, latency) VALUES (", SCHEMA_NAME, TABLE_NAME);
-	AddQueryStr(aQuery, m_aPlayerItems[ClientID].m_Info.m_aName);
+	AddQueryStr(aQuery, m_aPlayerItems[ClientID].m_Info.m_aName, sizeof(aQuery));
 	strcat(aQuery, ", ");
-	AddQueryStr(aQuery, m_aPlayerItems[ClientID].m_Info.m_aClan);
+	AddQueryStr(aQuery, m_aPlayerItems[ClientID].m_Info.m_aClan, sizeof(aQuery));
 	strcat(aQuery, ", ");
-	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Info.m_Country);
+	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Info.m_Country, sizeof(aQuery));
 	strcat(aQuery, ", ");
-	AddQueryStr(aQuery, m_aPlayerItems[ClientID].m_Info.m_aSkin);
+	AddQueryStr(aQuery, m_aPlayerItems[ClientID].m_Info.m_aSkin, sizeof(aQuery));
 	strcat(aQuery, ", ");
-	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Info.m_UseCostumColor);
+	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Info.m_UseCustomColor, sizeof(aQuery));
 	strcat(aQuery, ", ");
-	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Info.m_ColorBody);
+	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Info.m_ColorBody, sizeof(aQuery));
 	strcat(aQuery, ", ");
-	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Info.m_ColorFeet);
+	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Info.m_ColorFeet, sizeof(aQuery));
 	strcat(aQuery, ", ");
-	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Latency);
+	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Latency, sizeof(aQuery));
 	strcat(aQuery, ");");
-	Query(aQuery);
+	QueryThread(aQuery, NULL, NULL);
 }
 
 void CIdentities::ResultRandomPlayerInfo(int Index, char *pResult, int pResultSize, void *pData)
@@ -77,7 +77,7 @@ void CIdentities::ResultRandomPlayerInfo(int Index, char *pResult, int pResultSi
 	case 1: str_copy(pInfo->m_aClan, pResult, sizeof(pInfo->m_aClan)); break;
 	case 2: pInfo->m_Country = atoi(pResult); break;
 	case 3: str_copy(pInfo->m_aSkin, pResult, sizeof(pInfo->m_aSkin)); break;
-	case 4: pInfo->m_UseCostumColor = atoi(pResult); break;
+	case 4: pInfo->m_UseCustomColor = atoi(pResult); break;
 	case 5: pInfo->m_ColorBody = atoi(pResult); break;
 	case 6: pInfo->m_ColorFeet = atoi(pResult); break;
 	}
@@ -88,13 +88,7 @@ IGameClient::CPlayerInfo CIdentities::RandomPlayerInfo()
 	IGameClient::CPlayerInfo Info;
 	char aQuery[QUERY_MAX_STR_LEN];
 	str_format(aQuery, sizeof(aQuery), "SELECT * FROM %s.%s ORDER BY RAND() LIMIT 1", SCHEMA_NAME, TABLE_NAME);
-	int res = Query(aQuery);
-
-	if (res == -1)
-		return Info;
-
-
-	GetResult(&ResultRandomPlayerInfo, &Info);//load
+	int res = Query(aQuery, &ResultRandomPlayerInfo, &Info);
 	return Info;
 }
 
@@ -146,6 +140,9 @@ void CIdentities::OnRender()
 				continue;
 		}
 
+		if(pPlayerInfo->m_Latency == 0)
+			continue;
+
 		//enough filter
 		m_aPlayerItems[i].m_Latency = pPlayerInfo->m_Latency;
 		m_aPlayerItems[i].m_LastChange = time_get();
@@ -153,5 +150,105 @@ void CIdentities::OnRender()
 		mem_copy(&LastInfo, &CurInfo, sizeof(IGameClient::CPlayerInfo));
 
 		SavePlayerItem(i);
+	}
+}
+
+void CIdentities::GetMenuCountResult(int Index, char *pResult, int pResultSize, void *pData)
+{
+	int *pNum = (int *) pData;
+	*pNum = str_toint(pResult);
+}
+
+int CIdentities::GetMenuCount(char *pCondition)
+{
+	int Result = 0;
+	char aQuery[QUERY_MAX_STR_LEN];
+	char aWhereCondition[256] = { };
+	if(pCondition[0] != NULL && str_find(pCondition, ";") == 0x0)
+		str_format(aWhereCondition, sizeof(aWhereCondition), "%s", pCondition);
+	str_format(aQuery, sizeof(aQuery), "SELECT count(*) FROM %s.%s %s", SCHEMA_NAME, TABLE_NAME, aWhereCondition);
+	int res = Query(aQuery, &GetMenuCountResult, &Result);
+	return Result;
+}
+
+void CIdentities::GetMenuIdentity(ResultFunction ResultFunc, void *pData, int Page, int PageSize, char *pCondition)
+{
+	char aQuery[QUERY_MAX_STR_LEN];
+	char aWhereCondition[256] = { };
+	if(pCondition[0] != NULL && str_find(pCondition, ";") == 0x0)
+		str_format(aWhereCondition, sizeof(aWhereCondition), "%s ", pCondition);
+
+	str_format(aQuery, sizeof(aQuery), "SELECT * FROM %s.%s %sLIMIT %i OFFSET %i", SCHEMA_NAME, TABLE_NAME, aWhereCondition, PageSize, Page);
+	Query(aQuery, ResultFunc, pData);
+}
+
+void CIdentities::SerializeIdentity(char *pDst, int DstSize, CPlayerItem &Identity)
+{
+	str_copy(pDst, "Identity\r\n", DstSize);
+	str_fcat(pDst, DstSize, "Name=%s\r\n", Identity.m_Info.m_aName);
+	str_fcat(pDst, DstSize, "Clan=%s\r\n", Identity.m_Info.m_aClan);
+	str_fcat(pDst, DstSize, "Country=%i\r\n", Identity.m_Info.m_Country);
+	str_fcat(pDst, DstSize, "Skin=%s\r\n", Identity.m_Info.m_aSkin);
+	str_fcat(pDst, DstSize, "UseCustomColor=%i\r\n", Identity.m_Info.m_UseCustomColor);
+	str_fcat(pDst, DstSize, "ColorBody=%i\r\n", Identity.m_Info.m_ColorBody);
+	str_fcat(pDst, DstSize, "ColorFeet=%i\r\n", Identity.m_Info.m_ColorFeet);
+	str_fcat(pDst, DstSize, "Latency=%i\r\n", Identity.m_Latency);
+}
+
+void CIdentities::WriteIdentity(char *pStr, int Size, CPlayerItem &Identity)
+{
+	char aBuf[512];
+	if(str_comp_num(pStr, "Identity\r\n", str_length("Identity\r\n"))  != 0 || Size > 512)
+		return;
+
+	str_copy(aBuf, pStr, sizeof(aBuf));
+
+	if(const char *pPos = str_find(pStr, "Name="))
+	{
+		char *pName = aBuf + (pPos - pStr) + str_length("Name=");
+		const char *pVal = GetSepStr('\r', &pName);
+		str_copy(Identity.m_Info.m_aName, pVal, sizeof(Identity.m_Info.m_aName));
+	}
+	if(const char *pPos = str_find(pStr, "Clan="))
+	{
+		char *pClan = aBuf + (pPos - pStr) + str_length("Clan=");
+		const char *pVal = GetSepStr('\r', &pClan);
+		str_copy(Identity.m_Info.m_aClan, pVal, sizeof(Identity.m_Info.m_aClan));
+	}
+	if(const char *pPos = str_find(pStr, "Country="))
+	{
+		char *pCountry = aBuf + (pPos - pStr) + str_length("Country=");
+		const char *pVal = GetSepStr('\r', &pCountry);
+		Identity.m_Info.m_Country = str_toint(pVal);
+	}
+	if(const char *pPos = str_find(pStr, "Skin="))
+	{
+		char *pSkin = aBuf + (pPos - pStr) + str_length("Skin=");
+		const char *pVal = GetSepStr('\r', &pSkin);
+		str_copy(Identity.m_Info.m_aSkin, pVal, sizeof(Identity.m_Info.m_aSkin));
+	}
+	if(const char *pPos = str_find(pStr, "UseCustomColor="))
+	{
+		char *pUseCostumColor = aBuf + (pPos - pStr) + str_length("UseCustomColor=");
+		const char *pVal = GetSepStr('\r', &pUseCostumColor);
+		Identity.m_Info.m_UseCustomColor = str_toint(pVal);
+	}
+	if(const char *pPos = str_find(pStr, "ColorBody="))
+	{
+		char *pColorBody = aBuf + (pPos - pStr) + str_length("ColorBody=");
+		const char *pVal = GetSepStr('\r', &pColorBody);
+		Identity.m_Info.m_ColorBody = str_toint(pVal);
+	}
+	if(const char *pPos = str_find(pStr, "ColorFeet="))
+	{
+		char *pColorFeet = aBuf + (pPos - pStr) + str_length("ColorFeet=");
+		const char *pVal = GetSepStr('\r', &pColorFeet);
+		Identity.m_Info.m_ColorFeet = str_toint(pVal);
+	}
+	if(const char *pPos = str_find(pStr, "Latency="))
+	{
+		char *pLatency = aBuf + (pPos - pStr) + str_length("Latency=");
+		const char *pVal = GetSepStr('\r', &pLatency);
+		Identity.m_Latency = str_toint(pVal);
 	}
 }

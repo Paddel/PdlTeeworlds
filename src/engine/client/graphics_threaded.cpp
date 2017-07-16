@@ -536,7 +536,7 @@ void CGraphics_Threaded::ScreenshotDirect(const char *pFilename)
 		// save png
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "saved screenshot to '%s'", aWholePath);
-		m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "client", aBuf);
+		m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "client", aBuf);
 		png_open_file_write(&Png, aWholePath); // ignore_convention
 		png_set_data(&Png, Image.m_Width, Image.m_Height, 8, PNG_TRUECOLOR, (unsigned char *)Image.m_pData); // ignore_convention
 		png_close_file(&Png); // ignore_convention

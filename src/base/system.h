@@ -776,6 +776,8 @@ int str_length(const char *str);
 */
 void str_format(char *buffer, int buffer_size, const char *format, ...);
 
+void str_fcat(char *buffer, int buffer_size, const char *format, ...);
+
 /*
 	Function: str_sanitize_strong
 		Replaces all characters below 32 and above 127 with whitespace.
@@ -1297,6 +1299,9 @@ int create_http_socket();
 
 void console_hide();
 void console_show();
+
+char *ClipboardGet();
+void ClipboardSet(const char *pStr, int Size);
 
 #ifdef __cplusplus
 }

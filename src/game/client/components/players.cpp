@@ -614,6 +614,18 @@ void CPlayers::RenderPlayer(
 		Graphics()->QuadsDraw(&QuadItem, 1);
 		Graphics()->QuadsEnd();
 	}
+
+	if(m_pClient->m_pControls->GetInputLocked() && pInfo.m_Local)
+	{
+		Graphics()->TextureSet(g_pData->m_aImages[IMAGE_BROWSEICONS].m_Id);
+
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.5f);
+		RenderTools()->SelectSprite(SPRITE_BROWSE_LOCK);
+		IGraphics::CQuadItem QuadItem(Position.x - 8.0f, Position.y - 8.0f - 4.0f, 16.0f, 16.0f);
+		Graphics()->QuadsDrawTL(&QuadItem, 1);
+		Graphics()->QuadsEnd();
+	}
 }
 
 void CPlayers::OnRender()

@@ -4,6 +4,7 @@
 
 #include <engine/keys.h>
 #include <engine/shared/config.h>
+#include <engine/storage.h>
 
 #include <game/collision.h>
 #include <game/client/gameclient.h>
@@ -26,6 +27,7 @@ CControls::CControls()
 	m_FakeInput = FAKEINPUT_NONE;
 	m_BlockingPlayer = -1;
 	m_GrenadeDangerous = false;
+	m_InputLocked = false;
 }
 
 void CControls::OnReset()
@@ -149,7 +151,7 @@ int CControls::SnapInput(int *pData)
 	m_LastData.m_PlayerFlags = m_InputData.m_PlayerFlags;
 
 	// we freeze the input if chat or menu is activated
-	if(!(m_InputData.m_PlayerFlags&PLAYERFLAG_PLAYING))
+	if(!(m_InputData.m_PlayerFlags&PLAYERFLAG_PLAYING) && !m_InputLocked)
 	{
 		OnReset();
 
@@ -183,6 +185,9 @@ int CControls::SnapInput(int *pData)
 	if(!Send)
 		return 0;
 
+	if(g_Config.m_PdlFakeScoreboardOpen)
+		m_InputData.m_PlayerFlags |= 8;//scoreboard is always opened
+
 	LastSendTime = time_get();
 	mem_copy(pData, &m_InputData, sizeof(m_InputData));
 	return sizeof(m_InputData);
@@ -190,6 +195,12 @@ int CControls::SnapInput(int *pData)
 
 void CControls::OnRender()
 {
+	if(Input()->KeyDown(KEY_MOUSE_3))
+	{
+		mem_copy(&m_LockedInput, &m_InputData, sizeof(m_LockedInput));
+		m_InputLocked = !m_InputLocked;
+	}
+
 	// update target pos
 	if(m_pClient->m_Snap.m_pGameInfoObj && !m_pClient->m_Snap.m_SpecInfo.m_Active)
 		m_TargetPos = m_pClient->m_LocalCharacterPos + m_MousePos;
@@ -230,6 +241,39 @@ void CControls::OnRender()
 
 	if(g_Config.m_PdlGrenadeKills)
 		GrenadeKills();
+
+	static int s_TextureArrow = Graphics()->LoadTexture("pdl_enemy_arrow.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
+	if(g_Config.m_PdlBlockArrow && m_BlockingPlayer >= 0 && m_BlockingPlayer < MAX_CLIENTS 
+		&& m_pClient->m_Snap.m_aCharacters[m_BlockingPlayer].m_Active && m_pClient->m_Snap.m_LocalClientID != m_BlockingPlayer
+		&& m_pClient->m_Snap.m_pLocalCharacter && m_pClient->m_Snap.m_pLocalPrevCharacter)
+	{
+		CNetObj_CharacterCore EnemyChar;
+		m_pClient->m_aClients[m_BlockingPlayer].m_Predicted.Write(&EnemyChar);
+		vec2 EnemyPos = vec2(EnemyChar.m_X, EnemyChar.m_Y);
+
+		CNetObj_Character Char = *m_pClient->m_Snap.m_pLocalCharacter;
+		CNetObj_Character PrevChar = *m_pClient->m_Snap.m_pLocalPrevCharacter;
+		m_pClient->m_PredictedChar.Write(&Char);
+		m_pClient->m_PredictedPrevChar.Write(&PrevChar);
+		float IntraTick = Client()->PredIntraGameTick();
+		vec2 LocalPos = mix(vec2(PrevChar.m_X, PrevChar.m_Y), vec2(Char.m_X, Char.m_Y), IntraTick);
+
+		if(distance(LocalPos, EnemyPos) > g_Config.m_PdlBlockArrowDistance)
+		{
+			vec2 Direction = normalize(EnemyPos - LocalPos);
+			vec2 ArrowPos = LocalPos + Direction * 35.0f;
+			float Angle = GetAngle(Direction) + pi;
+
+			Graphics()->TextureSet(s_TextureArrow);
+			Graphics()->QuadsBegin();
+			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+			Graphics()->QuadsSetRotation(Angle);
+			float w = 44.0f / 3.8f, h = 136.0f / 3.8f;
+			IGraphics::CQuadItem QuadItem(ArrowPos.x - w * 0.5f, ArrowPos.y - h * 0.5f, w, h);
+			Graphics()->QuadsDrawTL(&QuadItem, 1);
+			Graphics()->QuadsEnd();
+		}
+	}
 }
 
 void CControls::GrenadeKills()
@@ -694,6 +738,16 @@ void CControls::InputNormal()
 	if(g_Config.m_Josystick)
 		JoystickInput();
 
+	if(g_Config.m_PdlInputlockActive == 0 && m_InputLocked == true)
+		m_InputLocked = false;
+
+	if(m_InputLocked == true)
+	{
+		mem_copy(&m_InputData, &m_LockedInput, sizeof(m_InputData));
+		vec2 MousePos = normalize(vec2(m_LockedInput.m_TargetX, m_LockedInput.m_TargetY)) * (250 + sinf(time_get() / time_freq()) * 200);
+		m_InputData.m_TargetX = MousePos.x; m_InputData.m_TargetY = MousePos.y;
+	}
+
 	// stress testing
 	if(g_Config.m_DbgStress)
 	{
@@ -1009,7 +1063,7 @@ void CControls::BlockSet()
 		}
 	}
 
-	if(s_PressedTick == 60)
+	if(s_PressedTick == 20)
 	{
 		m_BlockingPlayer = -1;
 	}

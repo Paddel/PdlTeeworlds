@@ -99,6 +99,17 @@ public:
 		m_ConfigFile = 0;
 	}
 
+	virtual void GetAllConfigVariables(ConfigVariableFuncInt IntFunc, ConfigVariableFuncStr StrFunc, void *pData)
+	{
+		#define MACRO_CONFIG_INT(Name,ScriptName,def,min,max,flags,desc) IntFunc(#Name, #ScriptName, g_Config.m_##Name, #def, #min, #max, #flags, #desc, pData);
+		#define MACRO_CONFIG_STR(Name,ScriptName,len,def,flags,desc) StrFunc(#Name, #ScriptName, g_Config.m_##Name, #len, #def, #flags, #desc, pData);
+
+		#include "config_variables.h"
+
+		#undef MACRO_CONFIG_INT
+		#undef MACRO_CONFIG_STR
+	}
+
 	virtual void RegisterCallback(SAVECALLBACKFUNC pfnFunc, void *pUserData)
 	{
 		dbg_assert(m_NumCallbacks < MAX_CALLBACKS, "too many config callbacks");

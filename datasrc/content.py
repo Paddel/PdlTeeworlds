@@ -387,6 +387,7 @@ container.sprites.Add(Sprite("abort", set_emoticons, 0, 4, 1, 1))
 
 container.sprites.Add(Sprite("browse_lock", set_browseicons, 0,0,1,1))
 container.sprites.Add(Sprite("browse_heart", set_browseicons, 1,0,1,1))
+container.sprites.Add(Sprite("browse_epsilon", set_browseicons, 2,0,1,1))
 container.sprites.Add(Sprite("browse_unpure", set_browseicons, 3,0,1,1))
 
 container.sprites.Add(Sprite("demobutton_play", set_demobuttons, 0,0,1,1))

@@ -41,6 +41,7 @@ class CMenus : public CComponent, public CTextureUser
 
 	int DoButton_DemoPlayer(const void *pID, const char *pText, int Checked, const CUIRect *pRect);
 	int DoButton_Sprite(const void *pID, int ImageID, int SpriteID, int Checked, const CUIRect *pRect, int Corners);
+	int DoButton_Texture(const void *pID, int Texture, int Checked, const CUIRect *pRect);
 	int DoButton_Toggle(const void *pID, int Checked, const CUIRect *pRect, bool Active);
 	int DoButton_Menu(const void *pID, const char *pText, int Checked, const CUIRect *pRect);
 	int DoButton_MenuTab(const void *pID, const char *pText, int Checked, const CUIRect *pRect, int Corners);
@@ -93,6 +94,8 @@ class CMenus : public CComponent, public CTextureUser
 	//static void demolist_listdir_callback(const char *name, int is_dir, void *user);
 	//static void demolist_list_callback(const CUIRect *rect, int index, void *user);
 
+	bool Grow(float *pSrc, float To, float Speed);
+
 	enum
 	{
 		POPUP_NONE=0,
@@ -123,6 +126,7 @@ class CMenus : public CComponent, public CTextureUser
 		PAGE_LAN,
 		PAGE_FAVORITES,
 		PAGE_DEMOS,
+		PAGE_EXTRAS,
 		PAGE_SETTINGS,
 		PAGE_SYSTEM,
 	};
@@ -274,6 +278,15 @@ class CMenus : public CComponent, public CTextureUser
 	void RenderSettingsGraphics(CUIRect MainView);
 	void RenderSettingsSound(CUIRect MainView);
 	void RenderSettings(CUIRect MainView);
+
+	static void RenderExtrasVariableInt(char *pName, char *pScriptName, int &Value, char *pDefault, char *pMin, char *pMax, char *pFlags, char *pDesc, void *pData);
+	static void RenderExtrasVariableStr(char *pName, char *pScriptName, char *pValue, char *pLength, char *pDefault, char *pFlags, char *pDesc, void *pData);
+	void RenderVariable(int index, char *pResult, int pResultSize, void *pData);
+	void RenderExtrasGeneral(CUIRect MainView);
+	static void GetMenuIdentityResult(int Index, char *pResult, int pResultSize, void *pData);
+	void RenderExtrasIdentities(CUIRect MainView);
+	void RenderExtrasDummies(CUIRect MainView);
+	void RenderExtras(CUIRect MainView);
 
 	void SetActive(bool Active);
 public:

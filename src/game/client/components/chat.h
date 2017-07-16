@@ -25,6 +25,7 @@ class CChat : public CComponent
 		char m_aName[64];
 		char m_aText[512];
 		bool m_Highlighted;
+		bool m_Important;
 	};
 
 	CLine m_aLines[MAX_LINES];
@@ -68,6 +69,8 @@ class CChat : public CComponent
 	int m_PendingChatCounter;
 	int64 m_LastChatSend;
 	int64 m_aLastSoundPlayed[CHAT_NUM];
+
+	bool IsImportantLine(int ClientID, const char *pText);
 
 	static void ConSay(IConsole::IResult *pResult, void *pUserData);
 	static void ConSayTeam(IConsole::IResult *pResult, void *pUserData);

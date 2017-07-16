@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="210mm"
+   height="297mm"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="Neues Dokument 1">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.98994949"
+     inkscape:cx="15.765183"
+     inkscape:cy="756.6587"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="505"
+     inkscape:window-height="423"
+     inkscape:window-x="65"
+     inkscape:window-y="57"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Ebene 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="fill:#000000;fill-opacity:0.54054051;stroke:none"
+       d="m 204.0625,142.21875 c -15.10986,0 -27.28125,12.17139 -27.28125,27.28125 l 0,83.09375 c 0,15.10986 12.17139,27.28125 27.28125,27.28125 l 59.59375,0 c 15.10986,0 27.28125,-12.17139 27.28125,-27.28125 l 0,-63.58871 c 0.0149,-7.2989 -1.79135,-10.52399 -5.83242,-14.42645 l -26.43953,-26.4179 c -4.0406,-4.69593 -8.10695,-5.87498 -14.77269,-5.94194 z m 8.25,14.96875 32.40625,0 0,8.5 c 0,12.34735 9.96515,22.3125 22.3125,22.3125 l 10.625,0 0,54.625 c 0,24.04378 -0.29104,24.28125 -22.28125,24.28125 l -43.0625,0 C 190.87615,265.4867 190.80914,265.60521 190.03125,242.625 l 0,-63.15625 c 0.20759,-22.29307 0.29045,-22.36134 22.28125,-22.28125 z"
+       id="rect2987"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ssssssccccsccsscsscccc"
+       inkscape:export-filename="C:\Users\Paddel\pdl_copy.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <rect
+       style="fill:#000000;fill-opacity:0.54054051;stroke:none"
+       id="rect3001"
+       width="43.57143"
+       height="10"
+       x="197.67857"
+       y="183.96933"
+       ry="5"
+       inkscape:export-filename="C:\Users\Paddel\pdl_copy.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <rect
+       ry="5"
+       y="211.48473"
+       x="197.67857"
+       height="10"
+       width="69.64286"
+       id="rect3005"
+       style="fill:#000000;fill-opacity:0.54054051;stroke:none"
+       inkscape:export-filename="C:\Users\Paddel\pdl_copy.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+    <rect
+       style="fill:#000000;fill-opacity:0.54054051;stroke:none"
+       id="rect3017"
+       width="69.64286"
+       height="10"
+       x="197.67857"
+       y="239.03392"
+       ry="5"
+       inkscape:export-filename="C:\Users\Paddel\pdl_copy.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90" />
+  </g>
+</svg>

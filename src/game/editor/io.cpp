@@ -204,12 +204,12 @@ int CEditorMap::Save(class IStorage *pStorage, const char *pFileName)
 {
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "saving to '%s'...", pFileName);
-	m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "editor", aBuf);
+	m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "editor", aBuf);
 	CDataFileWriter df;
 	if(!df.Open(pStorage, pFileName))
 	{
 		str_format(aBuf, sizeof(aBuf), "failed to open file '%s'...", pFileName);
-		m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "editor", aBuf);
+		m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "editor", aBuf);
 		return 0;
 	}
 
@@ -301,7 +301,7 @@ int CEditorMap::Save(class IStorage *pStorage, const char *pFileName)
 
 			if(pGroup->m_lLayers[l]->m_Type == LAYERTYPE_TILES)
 			{
-				m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "editor", "saving tiles layer");
+				m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, IConsole::OUTPUTTYPE_STANDARD, "editor", "saving tiles layer");
 				CLayerTiles *pLayer = (CLayerTiles *)pGroup->m_lLayers[l];
 				pLayer->PrepareForSave();
 
@@ -331,7 +331,7 @@ int CEditorMap::Save(class IStorage *pStorage, const char *pFileName)
 			}
 			else if(pGroup->m_lLayers[l]->m_Type == LAYERTYPE_QUADS)
 			{
-				m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "editor", "saving quads layer");
+				m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, IConsole::OUTPUTTYPE_STANDARD, "editor", "saving quads layer");
 				CLayerQuads *pLayer = (CLayerQuads *)pGroup->m_lLayers[l];
 				if(pLayer->m_lQuads.size())
 				{
@@ -395,7 +395,7 @@ int CEditorMap::Save(class IStorage *pStorage, const char *pFileName)
 
 	// finish the data file
 	df.Finish();
-	m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "editor", "saving done");
+	m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, IConsole::OUTPUTTYPE_STANDARD, "editor", "saving done");
 
 	// send rcon.. if we can
 	if(m_pEditor->Client()->RconAuthed())

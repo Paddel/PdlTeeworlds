@@ -64,7 +64,7 @@ void CPlayerCollection::OnRconLine(const char *pLine)
 void CPlayerCollection::CheckResult(int index, char *pResult, int pResultSize, void *pData)
 {
 	CPlayerCollection *pThis = (CPlayerCollection *)pData;
-	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "PlayerCheck", pResult);
+	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "PlayerCheck", pResult);
 }
 
 void CPlayerCollection::CheckGetIp(int index, char *pResult, int pResultSize, void *pData)
@@ -84,13 +84,11 @@ void CPlayerCollection::CheckGetIp(int index, char *pResult, int pResultSize, vo
 	}
 
 	str_format(aQuery, sizeof(aQuery), "SELECT name FROM %s.playercollection WHERE instr(ip, {$\"%s\"})", SCHEMA_NAME, aIP);
-	int res = pThis->Query(aQuery);
+	int res = pThis->Query(aQuery, &CheckResult, pThis);
 	
 	if(res != -1)
-	{
-		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "PlayerCheck", "<Complete ip>");
-		pThis->GetResult(&CheckResult, pThis);//load
-	}
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "PlayerCheck", "<Complete ip>");
+	
 
 	str_copy(aIP, pResult, sizeof(aIP));
 	int DotCount = 0;
@@ -107,26 +105,17 @@ void CPlayerCollection::CheckGetIp(int index, char *pResult, int pResultSize, vo
 	}
 
 	str_format(aQuery, sizeof(aQuery), "SELECT name FROM %s.playercollection WHERE instr(ip, {$\"%s\"})", SCHEMA_NAME, aIP);
-	res = pThis->Query(aQuery);
+	res = pThis->Query(aQuery, &CheckResult, pThis);
 	
 	if(res != -1)
-	{
-		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "PlayerCheck", "<ip range>");
-		pThis->GetResult(&CheckResult, pThis);//load
-	}
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "PlayerCheck", "<ip range>");
 }
 
 void CPlayerCollection::Check(const char *pName)
 {
 	char aQuery[QUERY_MAX_STR_LEN];
 	str_format(aQuery, sizeof(aQuery), "SELECT ip FROM %s.playercollection WHERE name=\"%s\"", SCHEMA_NAME, pName);
-	int res = Query(aQuery);
-	
-	if(res == -1)
-		return;
-
-
-	GetResult(&CheckGetIp, this);//load
+	int res = Query(aQuery, &CheckGetIp, this);
 }
 
 void CPlayerCollection::OnRender()
@@ -143,11 +132,11 @@ void CPlayerCollection::OnRender()
 
 		mem_zero(&aQuery, sizeof(aQuery));
 		str_copy(aQuery, "REPLACE INTO playercollection(name, ip) VALUES (", sizeof(aQuery));
-		AddQueryStr(aQuery, m_pClient->m_aClients[i].m_aName);
+		AddQueryStr(aQuery, m_pClient->m_aClients[i].m_aName, sizeof(aQuery));
 		strcat(aQuery, ", ");
-		AddQueryStr(aQuery, m_pClient->m_aClients[i].m_aAddr);
+		AddQueryStr(aQuery, m_pClient->m_aClients[i].m_aAddr, sizeof(aQuery));
 		strcat(aQuery, ");");
-		Query(aQuery);
+		Query(aQuery, NULL, 0x0);
 
 		str_copy(m_aLastName[i], m_pClient->m_aClients[i].m_aName, sizeof(m_aLastName[i]));
 	}

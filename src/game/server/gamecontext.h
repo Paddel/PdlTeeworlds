@@ -3,6 +3,8 @@
 #ifndef GAME_SERVER_GAMECONTEXT_H
 #define GAME_SERVER_GAMECONTEXT_H
 
+#include <base/array.h>
+
 #include <engine/server.h>
 #include <engine/console.h>
 #include <engine/shared/memheap.h>
@@ -14,6 +16,7 @@
 #include "gamecontroller.h"
 #include "gameworld.h"
 #include "player.h"
+#include "tee.h"
 
 /*
 	Tick
@@ -82,6 +85,7 @@ public:
 
 	CEventHandler m_Events;
 	CPlayer *m_apPlayers[MAX_CLIENTS];
+	array<CTee *> m_Tees;
 
 	IGameController *m_pController;
 	CGameWorld m_World;

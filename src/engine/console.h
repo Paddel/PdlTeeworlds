@@ -24,6 +24,15 @@ public:
 		TEMPCMD_HELP_LENGTH=96,
 		TEMPCMD_PARAMS_LENGTH=16,
 
+		IConsole::OUTPUTTYPE_STANDARD=0,
+		IConsole::OUTPUTTYPE_ERROR,
+		OUTPUTTYPE_CHAT,
+		OUTPUTTYPE_CHAT_HIGHLIGHTED,
+		OUTPUTTYPE_CHAT_IMPORTANT,
+		OUTPUTTYPE_CHAT_SYSTEM,
+		OUTPUTTYPE_CHAT_TRANSLATE,
+		OUTPUTTYPE_CHAT_TEAM,
+
 		MAX_PRINT_CB=4,
 	};
 
@@ -59,7 +68,7 @@ public:
 		int GetAccessLevel() const { return m_AccessLevel; }
 	};
 
-	typedef void (*FPrintCallback)(const char *pStr, void *pUser);
+	typedef void (*FPrintCallback)(const char *pStr, void *pUser, int Type);
 	typedef void (*FPossibleCallback)(const char *pCmd, void *pUser);
 	typedef void (*FCommandCallback)(IResult *pResult, void *pUserData);
 	typedef void (*FChainCommandCallback)(IResult *pResult, void *pUserData, FCommandCallback pfnCallback, void *pCallbackUserData);
@@ -84,7 +93,7 @@ public:
 
 	virtual int RegisterPrintCallback(int OutputLevel, FPrintCallback pfnPrintCallback, void *pUserData) = 0;
 	virtual void SetPrintOutputLevel(int Index, int OutputLevel) = 0;
-	virtual void Print(int Level, const char *pFrom, const char *pStr) = 0;
+	virtual void Print(int Level, int Type, const char *pFrom, const char *pStr) = 0;
 
 	virtual void SetAccessLevel(int AccessLevel) = 0;
 };

@@ -15,6 +15,7 @@
 #include <game/client/components/scoreboard.h>
 #include <game/client/components/sounds.h>
 #include <game/client/components/playercollection.h>
+#include <game/client/components/controls.h>
 #include <game/localization.h>
 
 #include "chat.h"
@@ -85,7 +86,7 @@ void CChat::ConChat(IConsole::IResult *pResult, void *pUserData)
 	else if(str_comp(pMode, "translate") == 0)
 		((CChat*)pUserData)->EnableMode(MODE_TRANSLATE);
 	else
-		((CChat*)pUserData)->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "console", "expected all, team or translate as mode");
+		((CChat*)pUserData)->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "console", "expected all, team or translate as mode");
 }
 
 void CChat::ConShowChat(IConsole::IResult *pResult, void *pUserData)
@@ -393,6 +394,7 @@ void CChat::AddLine(int ClientID, int Team, const char *pLine)
 		m_aLines[m_CurrentLine].m_ClientID = ClientID;
 		m_aLines[m_CurrentLine].m_Team = Team;
 		m_aLines[m_CurrentLine].m_NameColor = -2;
+		m_aLines[m_CurrentLine].m_Important = IsImportantLine(ClientID, pLine);
 
 		// check for highlighted name
 		const char *pHL = str_find_nocase(pLine, m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientID].m_aName);
@@ -433,7 +435,19 @@ void CChat::AddLine(int ClientID, int Team, const char *pLine)
 
 		char aBuf[1024];
 		str_format(aBuf, sizeof(aBuf), "%s%s", m_aLines[m_CurrentLine].m_aName, m_aLines[m_CurrentLine].m_aText);
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, m_aLines[m_CurrentLine].m_Team?"teamchat":"chat", aBuf);
+		int OutputType = IConsole::OUTPUTTYPE_CHAT;
+		if(m_aLines[m_CurrentLine].m_Important)
+			OutputType = IConsole::OUTPUTTYPE_CHAT_IMPORTANT;
+		else if(m_aLines[m_CurrentLine].m_ClientID == -2)
+			OutputType = IConsole::OUTPUTTYPE_CHAT_TRANSLATE;
+		else if(m_aLines[m_CurrentLine].m_ClientID == -1)
+			OutputType = IConsole::OUTPUTTYPE_CHAT_SYSTEM;
+		else if(m_aLines[m_CurrentLine].m_Highlighted)
+			OutputType = IConsole::OUTPUTTYPE_CHAT_HIGHLIGHTED;
+		else if(m_aLines[m_CurrentLine].m_Team)
+			OutputType = IConsole::OUTPUTTYPE_CHAT_TEAM;
+
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, OutputType, m_aLines[m_CurrentLine].m_Team?"teamchat":"chat", aBuf);
 	}
 
 	// play sound
@@ -462,6 +476,17 @@ void CChat::AddLine(int ClientID, int Team, const char *pLine)
 			m_aLastSoundPlayed[CHAT_CLIENT] = Now;
 		}
 	}
+}
+
+bool CChat::IsImportantLine(int ClientID, const char *pText)
+{
+	if(ClientID != -1)
+		return false;
+
+	int BlockingID = m_pClient->m_pControls->m_BlockingPlayer;
+	if(BlockingID != -1 && str_find(pText, m_pClient->m_aClients[BlockingID].m_aName) && m_pClient->m_aClients[BlockingID].m_aName[0] != '\0')
+		return true;
+	return false;
 }
 
 void CChat::OnRender()
@@ -575,7 +600,9 @@ void CChat::OnRender()
 		Cursor.m_LineWidth = LineWidth;
 
 		// render name
-		if(m_aLines[r].m_ClientID == -2)
+		if(m_aLines[r].m_Important)
+			TextRender()->TextColor(1.0f, 0.0f, 0.72f, Blend); // important
+		else if(m_aLines[r].m_ClientID == -2)
 			TextRender()->TextColor(0.0f, 0.0f, 0.8f, Blend); // translator
 		else if(m_aLines[r].m_ClientID == -1)
 			TextRender()->TextColor(1.0f, 1.0f, 0.5f, Blend); // system
@@ -593,7 +620,9 @@ void CChat::OnRender()
 		TextRender()->TextEx(&Cursor, m_aLines[r].m_aName, -1);
 
 		// render line
-		if(m_aLines[r].m_ClientID == -2)
+		if(m_aLines[r].m_Important)
+			TextRender()->TextColor(1.0f, 0.0f, 0.72f, Blend); // important
+		else if(m_aLines[r].m_ClientID == -2)
 			TextRender()->TextColor(0.0f, 0.0f, 0.8f, Blend); // translator
 		else if(m_aLines[r].m_ClientID == -1)
 			TextRender()->TextColor(1.0f, 1.0f, 0.5f, Blend); // system

@@ -207,7 +207,7 @@ void CGameConsole::CInstance::OnInput(IInput::CEvent Event)
 	}
 }
 
-void CGameConsole::CInstance::PrintLine(const char *pLine)
+void CGameConsole::CInstance::PrintLine(const char *pLine, int OutputType)
 {
 	int Len = str_length(pLine);
 
@@ -218,6 +218,7 @@ void CGameConsole::CInstance::PrintLine(const char *pLine)
 	pEntry->m_YOffset = -1.0f;
 	mem_copy(pEntry->m_aText, pLine, Len);
 	pEntry->m_aText[Len] = 0;
+	pEntry->m_OutputType = OutputType;
 }
 
 CGameConsole::CGameConsole()
@@ -495,6 +496,18 @@ void CGameConsole::OnRender()
 		{
 			while(pEntry)
 			{
+				
+				switch(pEntry->m_OutputType)
+				{
+				case IConsole::OUTPUTTYPE_ERROR: TextRender()->TextColor(1.0f, 0.0f, 0.0f, 1.0f); break;
+				case IConsole::OUTPUTTYPE_CHAT: TextRender()->TextColor(0.5f, 0.5f, 0.5f, 1.0f); break;
+				case IConsole::OUTPUTTYPE_CHAT_HIGHLIGHTED: TextRender()->TextColor(0.4f, 0.0f, 0.0f, 1.0f); break;
+				case IConsole::OUTPUTTYPE_CHAT_IMPORTANT: TextRender()->TextColor(0.4f, 0.0f, 0.2f, 1.0f); break;
+				case IConsole::OUTPUTTYPE_CHAT_SYSTEM: TextRender()->TextColor(0.5f, 0.5f, 0.25f, 1.0f); break;
+				case IConsole::OUTPUTTYPE_CHAT_TRANSLATE: TextRender()->TextColor(0.0f, 0.0f, 0.4f, 1.0f); break;
+				case IConsole::OUTPUTTYPE_CHAT_TEAM: TextRender()->TextColor(0.325f, 0.6f, 0.325f, 1.0f); break;
+				default: TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f); break;
+				}
 				// get y offset (calculate it if we haven't yet)
 				if(pEntry->m_YOffset < 0.0f)
 				{
@@ -535,6 +548,8 @@ void CGameConsole::OnRender()
 				break;
 			}
 		}
+
+		TextRender()->TextColor(1,1,1,1);
 
 		// render page
 		char aBuf[128];
@@ -657,9 +672,9 @@ void CGameConsole::ConDumpRemoteConsole(IConsole::IResult *pResult, void *pUserD
 	((CGameConsole *)pUserData)->Dump(CONSOLETYPE_REMOTE);
 }
 
-void CGameConsole::ClientConsolePrintCallback(const char *pStr, void *pUserData)
+void CGameConsole::ClientConsolePrintCallback(const char *pStr, void *pUserData, int OutputType)
 {
-	((CGameConsole *)pUserData)->m_LocalConsole.PrintLine(pStr);
+	((CGameConsole *)pUserData)->m_LocalConsole.PrintLine(pStr, OutputType);
 }
 
 void CGameConsole::ConchainConsoleOutputLevelUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
@@ -672,12 +687,12 @@ void CGameConsole::ConchainConsoleOutputLevelUpdate(IConsole::IResult *pResult, 
 	}
 }
 
-void CGameConsole::PrintLine(int Type, const char *pLine)
+void CGameConsole::PrintLine(int Type, const char *pLine, int OutputType)
 {
 	if(Type == CONSOLETYPE_LOCAL)
-		m_LocalConsole.PrintLine(pLine);
+		m_LocalConsole.PrintLine(pLine, OutputType);
 	else if(Type == CONSOLETYPE_REMOTE)
-		m_RemoteConsole.PrintLine(pLine);
+		m_RemoteConsole.PrintLine(pLine, OutputType);
 }
 
 void CGameConsole::OnConsoleInit()

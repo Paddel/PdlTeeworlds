@@ -1843,7 +1843,7 @@ void CEditor::DoMapEditor(CUIRect View, CUIRect ToolBar)
 						// grab brush
 						char aBuf[256];
 						str_format(aBuf, sizeof(aBuf),"grabbing %f %f %f %f", r.x, r.y, r.w, r.h);
-						Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "editor", aBuf);
+						Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, IConsole::OUTPUTTYPE_STANDARD, "editor", aBuf);
 
 						// TODO: do all layers
 						int Grabs = 0;

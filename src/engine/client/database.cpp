@@ -1,8 +1,6 @@
 
 #define DB_CONNECTION_BAD 0
 
-#include <string.h>
-
 #include <base/system.h>
 
 #include <WinSock.h>
@@ -10,9 +8,97 @@
 
 #include "database.h"
 
-MYSQL_ROW field;
-MYSQL *conn;
-MYSQL_RES *result;
+static LOCK s_QueryLock = NULL;
+
+struct CThreadFeed
+{
+	ResultFunction ResultCallback;
+	void *pResultData;
+	char m_aCommand[512];
+	int *m_pResult;
+	char m_aAddr[32]; char m_aUserName[128]; char m_aPass[128]; char m_aSchema[64];
+};
+
+
+static void ExecuteQuery(void *pData)
+{
+	MYSQL_RES *pResult = NULL;
+	MYSQL_ROW Field = NULL;
+	MYSQL *pConn = NULL;
+	CThreadFeed *pFeed = (CThreadFeed *)pData;
+
+	pConn = mysql_init(NULL);
+	if (pConn == NULL)
+	{
+		dbg_msg("Database", "Initialing connection failed: '%s'", mysql_error(pConn));
+		return;
+	}
+
+	if (mysql_real_connect(pConn, pFeed->m_aAddr, pFeed->m_aUserName, pFeed->m_aPass, pFeed->m_aSchema, 0, NULL, 0) == NULL)
+	{
+		dbg_msg("Database", "Connecting failed: '%s'", mysql_error(pConn));
+        return;
+	}
+
+	mysql_query(pConn, pFeed->m_aCommand);//Main-cmd
+	//dbg_msg(0, pFeed->m_aCommand);
+
+	{//error
+		int err = mysql_errno(pConn);
+		if(err)
+		{
+			dbg_msg("Database", "Query failed: '%s", mysql_error(pConn));
+			mysql_close(pConn);
+			return;
+		}
+	}
+
+	if(pFeed->ResultCallback == 0x0)
+	{
+		mysql_close(pConn);
+		return;
+	}
+
+	pResult = mysql_store_result(pConn);
+
+	if(!pResult)//no Results. DONE
+	{
+		*pFeed->m_pResult = -1;
+		mysql_close(pConn);
+		return;
+	}
+
+	int count = (int)pResult->row_count;
+	
+	if(count == 0)
+	{
+		*pFeed->m_pResult = -1;
+		mysql_close(pConn);
+		return;
+	}
+
+	for(int i = 0; i < count; i++)
+	{
+		Field = mysql_fetch_row(pResult);
+		int affected = mysql_num_fields(pResult);
+
+		for(int x = 0; x < affected; x++)
+			pFeed->ResultCallback(x, CDatabase::GetDatabaseValue(Field[x]), sizeof(Field[x]), pFeed->pResultData);
+	}
+	mysql_close(pConn);
+}
+
+static void QueryThreadFunction(void *pData)//only for threads
+{
+	CThreadFeed *pFeed = (CThreadFeed *)pData;
+
+	lock_wait(s_QueryLock);
+	ExecuteQuery(pData);
+	lock_release(s_QueryLock);
+
+	delete pFeed;
+}
+
 
 CDatabase::CDatabase()
 {
@@ -24,100 +110,81 @@ void CDatabase::Init(char *pAddr, char *pUserName, char *pPass, char *pSchema)
 	dbg_msg("Database", "Creating connection.");
 	m_Connected = InitConnection(pAddr, pUserName, pPass, pSchema);
 	if(m_Connected == DB_CONNECTION_BAD)
-		dbg_msg("Database", "Connecting failed: '%s'", mysql_error(conn));
+		return;
+
+	if(s_QueryLock == NULL)
+		s_QueryLock = lock_create();
 }
 
 
 bool CDatabase::InitConnection(char *pAddr, char *pUserName, char *pPass, char *pSchema)
 {
-	conn = mysql_init(NULL);
+	MYSQL *pConn = mysql_init(NULL);
  
-    if (conn == NULL)
+    if (pConn == NULL)
+	{
+		dbg_msg("Database", "Initialing connection failed: '%s'", mysql_error(pConn));
 		return DB_CONNECTION_BAD;
+	}
 
-    if (mysql_real_connect(conn, pAddr, pUserName, pPass, pSchema, 0,NULL,0) == NULL)
+    if (mysql_real_connect(pConn, pAddr, pUserName, pPass, pSchema, 0,NULL,0) == NULL)
+	{
+		dbg_msg("Database", "Connecting failed: '%s'", mysql_error(pConn));
         return DB_CONNECTION_BAD;
+	}
 
-	//if(g_Config.m_Debug)
 	dbg_msg("Database", "Connected");
+
+	str_copy(m_aAddr, pAddr, sizeof(m_aAddr));
+	str_copy(m_aUserName, pUserName, sizeof(m_aUserName));
+	str_copy(m_aPass, pPass, sizeof(m_aPass));
+	str_copy(m_aSchema, pSchema, sizeof(m_aSchema));
+
+	mysql_close(pConn);
 
 	return true;
 }
 
-void CDatabase::CloseConnection()
+void CDatabase::QueryThread(char *command, ResultFunction ResultCallback, void *pData)
 {
-	mysql_close(conn);
-}
-
-int CDatabase::Query(char *command)
-{
-	result = NULL;
-	if(!m_Connected)
-	{
-		//if(g_Config.m_Debug)
-		dbg_msg("Database", "Not connected. Can't send command");
-		return 1;
-	}
-
-	mysql_query(conn, command);//Main-cmd
-
-	{//error
-		int err = mysql_errno(conn);
-		if(err)
-		{
-			dbg_msg("Database", "Query failed: '%s", mysql_error(conn));
-			return err;
-		}
-	}
-
-	result = mysql_store_result(conn);
-
-	if(!result)//no Results. DONE
-		return -1;
-
-	int affected = mysql_num_fields(result);
-	int cont = (int)result->row_count; // Bottleneck: Use SELECT *, COUNT(*)
-	//cout << "number entries: " << cont << endl;
-	
-	if(cont == 0)
-		return -1;
-
-	//for(int i = 0; i < cont; i++)
-	//{
-	//	for (int x= 0; x < affected; x++)
-	//	{
-	//		//if(g_Config.m_Debug)
-	//			dbg_msg("Database", "Value of %i: %s", i, field[x]);
-	//	}
-	//	
-	//	field = mysql_fetch_row(result);
-	//	affected = mysql_num_fields(result);
-	//}
-	return 0;
-}
-
-void CDatabase::GetResult(ResultFunction ResultCallback, void *pData)
-{
-	if(result == NULL)
+	if(m_Connected == false)
 		return;
 
-	/*field = mysql_fetch_row(result);*/
-	//int affected = mysql_num_fields(result);
-	int count = (int)result->row_count; // Bottleneck: Use SELECT *, COUNT(*)
-	
-	if(count == 0)
-		return;
+	int Result = 0;
 
-	for(int i = 0; i < count; i++)
-	{
-		field = mysql_fetch_row(result);
-		int affected = mysql_num_fields(result);
+	CThreadFeed *pFeed = new CThreadFeed();
+	pFeed->ResultCallback = ResultCallback;
+	pFeed->pResultData = pData;
+	str_copy(pFeed->m_aCommand, command, sizeof(pFeed->m_aCommand));
+	pFeed->m_pResult = &Result;
+	str_copy(pFeed->m_aAddr, m_aAddr, sizeof(pFeed->m_aAddr));
+	str_copy(pFeed->m_aUserName, m_aUserName, sizeof(pFeed->m_aUserName));
+	str_copy(pFeed->m_aPass, m_aPass, sizeof(pFeed->m_aPass));
+	str_copy(pFeed->m_aSchema, m_aSchema, sizeof(pFeed->m_aSchema));
 
-		for(int x = 0; x < affected; x++)
-			ResultCallback(x, GetDatabaseValue(field[x]), sizeof(field[x]), pData);
+	//dbg_msg(0, "nt");
+	thread_create(QueryThreadFunction, pFeed);
+}
 
-	}
-	result = 0;
+int CDatabase::Query(char *command, ResultFunction ResultCallback, void *pData)
+{
+	if(m_Connected == false)
+		return -1;
+
+	int Result = 0;
+
+	CThreadFeed Feed;
+	Feed.ResultCallback = ResultCallback;
+	Feed.pResultData = pData;
+	str_copy(Feed.m_aCommand, command, sizeof(Feed.m_aCommand));
+	Feed.m_pResult = &Result;
+	str_copy(Feed.m_aAddr, m_aAddr, sizeof(Feed.m_aAddr));
+	str_copy(Feed.m_aUserName, m_aUserName, sizeof(Feed.m_aUserName));
+	str_copy(Feed.m_aPass, m_aPass, sizeof(Feed.m_aPass));
+	str_copy(Feed.m_aSchema, m_aSchema, sizeof(Feed.m_aSchema));
+
+	ExecuteQuery(&Feed);
+	return Result;
 }
 
 char *CDatabase::GetDatabaseValue(char *pStr)
@@ -127,18 +194,38 @@ char *CDatabase::GetDatabaseValue(char *pStr)
 	return pStr;
 }
 
-void CDatabase::AddQueryStr(char *pDest, char *pStr)
+void CDatabase::PreventInjectionAppend(char *pDst, char *pStr, int DstSize)
 {
-	strcat(pDest, "\"");
-	strcat(pDest, pStr);
-	strcat(pDest, "\"");
+	int Len = str_length(pStr);
+	int DstPos = str_length(pDst);
+	for(int i = 0; i < Len; i++)
+	{
+		if(DstPos >= DstSize - 3)
+		{
+			dbg_msg(0, "size");
+			return;
+		}
+
+		if(pStr[i] == '\\' || pStr[i] == '\'' || pStr[i] == '\"')
+			pDst[DstPos++] = '\\';
+
+		pDst[DstPos++] = pStr[i];
+	}
+	pDst[DstPos] = '\0';
 }
 
-void CDatabase::AddQueryInt(char *pDest, int Val)
+void CDatabase::AddQueryStr(char *pDst, char *pStr, int DstSize)
+{
+	str_append(pDst, "\"", DstSize);
+	PreventInjectionAppend(pDst, pStr, DstSize);
+	str_append(pDst, "\"", DstSize);
+}
+
+void CDatabase::AddQueryInt(char *pDst, int Val, int DstSize)
 {
 	char aBuf[128];
-	itoa(Val, aBuf, 10);
-	strcat(pDest, "\"");
-	strcat(pDest, aBuf);
-	strcat(pDest, "\"");
+	str_format(aBuf, sizeof(aBuf), "%i", Val);
+	str_append(pDst, "\"", DstSize);
+	str_append(pDst, aBuf, DstSize);
+	str_append(pDst, "\"", DstSize);
 }

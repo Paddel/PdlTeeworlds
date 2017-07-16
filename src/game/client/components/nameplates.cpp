@@ -62,7 +62,7 @@ void CNamePlates::RenderNameplate(
 			TextRender()->Text(0, Position.x, Position.y-90, 28.0f, aBuf, -1);
 		}
 
-		if(g_Config.m_PdlBlockscoreShow)
+		/*if(g_Config.m_PdlBlockscoreShow)
 		{
 			int Wins = m_pClient->m_aClients[pPlayerInfo->m_ClientID].m_BlockScore[g_Config.m_PdlBlockscoreShowType][0];
 			int Looses = m_pClient->m_aClients[pPlayerInfo->m_ClientID].m_BlockScore[g_Config.m_PdlBlockscoreShowType][1];
@@ -74,7 +74,7 @@ void CNamePlates::RenderNameplate(
 			str_format(aBuf, sizeof(aBuf),"W%i L%i R%.2f", Wins, Looses, Rate);
 
 			TextRender()->Text(0, Position.x, Position.y-90, 28.0f, aBuf, -1);
-		}
+		}*/
 
 		TextRender()->TextColor(1,1,1,1);
 		TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.3f);

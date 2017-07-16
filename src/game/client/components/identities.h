@@ -10,7 +10,9 @@ private:
 	bool FilteredName(char *pName, int Size);
 	void SavePlayerItem(int ClientID);
 
-	struct
+public:
+
+	struct CPlayerItem
 	{
 		int64 m_LastChange;
 		IGameClient::CPlayerInfo m_Info;
@@ -23,6 +25,13 @@ public:
 	IGameClient::CPlayerInfo RandomPlayerInfo();
 
 	static void ResultRandomPlayerInfo(int Index, char *pResult, int pResultSize, void *pData);
+
+	static void GetMenuCountResult(int Index, char *pResult, int pResultSize, void *pData);
+	int GetMenuCount(char *pCondition);
+	void GetMenuIdentity(ResultFunction ResultFunc, void *pData, int Page, int PageSize, char *pCondition);
+
+	void SerializeIdentity(char *pDst, int DstSize, CPlayerItem &Identity);
+	void WriteIdentity(char *pStr, int Size, CPlayerItem &Identity);
 
 	virtual void OnInit();
 	virtual void OnRender();

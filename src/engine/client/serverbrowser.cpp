@@ -508,7 +508,7 @@ void CServerBrowser::Refresh(int Type)
 		}
 
 		if(g_Config.m_Debug)
-			m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client_srvbrowse", "broadcasting for servers");
+			m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, IConsole::OUTPUTTYPE_STANDARD, "client_srvbrowse", "broadcasting for servers");
 	}
 	else if(Type == IServerBrowser::TYPE_INTERNET)
 		m_NeedRefresh = 1;
@@ -530,7 +530,7 @@ void CServerBrowser::RequestImpl(const NETADDR &Addr, CServerEntry *pEntry) cons
 		net_addr_str(&Addr, aAddrStr, sizeof(aAddrStr), true);
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf),"requesting server info from %s", aAddrStr);
-		m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client_srvbrowse", aBuf);
+		m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, IConsole::OUTPUTTYPE_STANDARD, "client_srvbrowse", aBuf);
 	}
 
 	mem_copy(Buffer, SERVERBROWSE_GETINFO, sizeof(SERVERBROWSE_GETINFO));
@@ -559,7 +559,7 @@ void CServerBrowser::RequestImpl64(const NETADDR &Addr, CServerEntry *pEntry) co
 		net_addr_str(&Addr, aAddrStr, sizeof(aAddrStr), true);
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "requesting server info 64 from %s", aAddrStr);
-		m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client_srvbrowse", aBuf);
+		m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, IConsole::OUTPUTTYPE_STANDARD, "client_srvbrowse", aBuf);
 	}
 
 	mem_copy(Buffer, SERVERBROWSE_GETINFO64, sizeof(SERVERBROWSE_GETINFO64));
@@ -617,7 +617,7 @@ void CServerBrowser::Update(bool ForceResort)
 		}
 
 		if(g_Config.m_Debug)
-			m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client_srvbrowse", "requesting server list");
+			m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, IConsole::OUTPUTTYPE_STANDARD, "client_srvbrowse", "requesting server list");
 	}
 
 	// do timeouts
@@ -706,7 +706,7 @@ void CServerBrowser::AddFavorite(const NETADDR &Addr)
 		net_addr_str(&Addr, aAddrStr, sizeof(aAddrStr), true);
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "added fav, %s", aAddrStr);
-		m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, "client_srvbrowse", aBuf);
+		m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, IConsole::OUTPUTTYPE_STANDARD, "client_srvbrowse", aBuf);
 	}
 }
 

@@ -356,7 +356,7 @@ void CAutoRun::ConMapLoad(IConsole::IResult *pResult, void *pUserData)
 	IOHANDLE File = pThis->Storage()->OpenFile(aFilename, IOFLAG_READ, IStorage::TYPE_ALL);
 	if(!File)
 	{
-		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Autorun", "File not found.");
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "Autorun", "File not found.");
 		return;
 	}
 
@@ -382,7 +382,7 @@ void CAutoRun::ConMapLoad(IConsole::IResult *pResult, void *pUserData)
 
 		if(Error)
 		{
-			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Autorun", "Map file does not fit!");
+			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "Autorun", "Map file does not fit!");
 			break;
 		}
 	}

@@ -24,9 +24,9 @@ public:
 	int GetTeam() const { return m_Team; };
 	int GetCID() const { return m_ClientID; };
 
-	void Tick();
-	void PostTick();
-	void Snap(int SnappingClient);
+	virtual void Tick();
+	virtual void PostTick();
+	virtual void Snap(int SnappingClient);
 
 	void OnDirectInput(CNetObj_PlayerInput *NewInput);
 	void OnPredictedInput(CNetObj_PlayerInput *NewInput);

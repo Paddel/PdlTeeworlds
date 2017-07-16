@@ -585,7 +585,7 @@ void CGraphics_OpenGL::ScreenshotDirect(const char *pFilename)
 		// save png
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "saved screenshot to '%s'", aWholePath);
-		m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "client", aBuf);
+		m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "client", aBuf);
 		png_open_file_write(&Png, aWholePath); // ignore_convention
 		png_set_data(&Png, w, h, 8, PNG_TRUECOLOR, (unsigned char *)pPixelData); // ignore_convention
 		png_close_file(&Png); // ignore_convention

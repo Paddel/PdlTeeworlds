@@ -20,6 +20,7 @@
 #include <game/client/animstate.h>
 #include <game/localization.h>
 
+#include "identities.h"
 #include "binds.h"
 #include "countryflags.h"
 #include "menus.h"
@@ -206,6 +207,38 @@ void CMenus::RenderSettingsPlayer(CUIRect MainView)
 	if(DoEditBox(g_Config.m_PlayerClan, &Button, g_Config.m_PlayerClan, sizeof(g_Config.m_PlayerClan), 14.0f, &s_OffsetClan))
 		m_NeedSendinfo = true;
 
+	static int64 s_ClipboardCheck = time_get();
+	static bool s_PasteAble = false;
+	static char s_aClipBoard[512] = { };
+
+	if(s_ClipboardCheck < time_get())
+	{
+		char *pClipboard = ClipboardGet();
+		if(str_comp_num(pClipboard, "Identity\r\n", str_length("Identity\r\n"))  == 0 && str_length(pClipboard) < 512)
+		{
+			s_PasteAble = true;
+			str_copy(s_aClipBoard, pClipboard, sizeof(s_aClipBoard));
+		}
+		else
+			s_PasteAble = false;
+		s_ClipboardCheck = time_get() + time_freq();
+	}
+		
+	if(s_PasteAble)
+	{
+		Button.VSplitLeft(Button.w+8, 0, &Button);
+		Button.VSplitLeft(64.0f, &Button, NULL);
+		static int s_PasteButton = 0;
+		if(DoButton_Menu((void*)&s_PasteButton, Localize("Paste"), 0, &Button))
+		{
+			CIdentities::CPlayerItem Temp;
+			m_pClient->m_pIdentities->WriteIdentity(s_aClipBoard, sizeof(s_aClipBoard), Temp);
+			str_copy(g_Config.m_PlayerName, Temp.m_Info.m_aName, sizeof(g_Config.m_PlayerName));
+			str_copy(g_Config.m_PlayerClan, Temp.m_Info.m_aClan, sizeof(g_Config.m_PlayerClan));
+			g_Config.m_PlayerCountry = Temp.m_Info.m_Country;
+		}
+	}
+
 	// country flag selector
 	MainView.HSplitTop(20.0f, 0, &MainView);
 	static float s_ScrollValue = 0.0f;
@@ -280,6 +313,7 @@ void CMenus::RenderSettingsTee(CUIRect MainView)
 
 	Label.VSplitLeft(Label.w+8, 0, &Label);
 	Label.VSplitLeft(126.0f, &Label, 0);
+	Label.HSplitTop(32.0f, &Label, NULL);
 	static int s_PaddelButton = 0;
 	if(DoButton_Menu((void*)&s_PaddelButton, Localize("Paddel"), 0, &Label))
 	{
@@ -287,6 +321,38 @@ void CMenus::RenderSettingsTee(CUIRect MainView)
 		g_Config.m_PlayerUseCustomColor = 1;
 		g_Config.m_PlayerColorBody = 7424000;
 		g_Config.m_PlayerColorFeet = 7339830;
+	}
+
+	static int64 s_ClipboardCheck = time_get();
+	static bool s_PasteAble = false;
+	static char s_aClipBoard[512] = { };
+
+	if(s_ClipboardCheck < time_get())
+	{
+		char *pClipboard = ClipboardGet();
+		if(str_comp_num(pClipboard, "Identity\r\n", str_length("Identity\r\n"))  == 0 && str_length(pClipboard) < 512)
+		{
+			s_PasteAble = true;
+			str_copy(s_aClipBoard, pClipboard, sizeof(s_aClipBoard));
+		}
+		else
+			s_PasteAble = false;
+		s_ClipboardCheck = time_get() + time_freq();
+	}
+		
+	if(s_PasteAble)
+	{
+		Label.HSplitTop(38.0f, NULL, &Label);
+		Label.HSplitTop(32.0f, &Label, NULL);
+		static int s_PasteButton = 0;
+		if(DoButton_Menu((void*)&s_PasteButton, Localize("Paste"), 0, &Label))
+		{
+			CIdentities::CPlayerItem Temp;
+			m_pClient->m_pIdentities->WriteIdentity(s_aClipBoard, sizeof(s_aClipBoard), Temp);
+			g_Config.m_PlayerUseCustomColor = Temp.m_Info.m_UseCustomColor;
+			g_Config.m_PlayerColorBody = Temp.m_Info.m_ColorBody;
+			g_Config.m_PlayerColorFeet = Temp.m_Info.m_ColorFeet;
+		}
 	}
 
 	// custom colour selector
@@ -934,7 +1000,7 @@ void LoadLanguageIndexfile(IStorage *pStorage, IConsole *pConsole, sorted_array<
 	IOHANDLE File = pStorage->OpenFile("languages/index.txt", IOFLAG_READ, IStorage::TYPE_ALL);
 	if(!File)
 	{
-		pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "localization", "couldn't open index file");
+		pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, IConsole::OUTPUTTYPE_ERROR, "localization", "couldn't open index file");
 		return;
 	}
 
@@ -953,7 +1019,7 @@ void LoadLanguageIndexfile(IStorage *pStorage, IConsole *pConsole, sorted_array<
 		pLine = LineReader.Get();
 		if(!pLine)
 		{
-			pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "localization", "unexpected end of index file");
+			pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, IConsole::OUTPUTTYPE_ERROR, "localization", "unexpected end of index file");
 			break;
 		}
 
@@ -961,7 +1027,7 @@ void LoadLanguageIndexfile(IStorage *pStorage, IConsole *pConsole, sorted_array<
 		{
 			char aBuf[128];
 			str_format(aBuf, sizeof(aBuf), "malform replacement for index '%s'", aOrigin);
-			pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "localization", aBuf);
+			pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, IConsole::OUTPUTTYPE_ERROR, "localization", aBuf);
 			(void)LineReader.Get();
 			continue;
 		}
@@ -970,7 +1036,7 @@ void LoadLanguageIndexfile(IStorage *pStorage, IConsole *pConsole, sorted_array<
 		pLine = LineReader.Get();
 		if(!pLine)
 		{
-			pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "localization", "unexpected end of index file");
+			pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, IConsole::OUTPUTTYPE_ERROR, "localization", "unexpected end of index file");
 			break;
 		}
 
@@ -978,7 +1044,7 @@ void LoadLanguageIndexfile(IStorage *pStorage, IConsole *pConsole, sorted_array<
 		{
 			char aBuf[128];
 			str_format(aBuf, sizeof(aBuf), "malform replacement for index '%s'", aOrigin);
-			pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "localization", aBuf);
+			pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, IConsole::OUTPUTTYPE_ERROR, "localization", aBuf);
 			continue;
 		}
 

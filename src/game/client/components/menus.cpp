@@ -127,6 +127,27 @@ int CMenus::DoButton_Icon(int ImageId, int SpriteId, const CUIRect *pRect)
 	return 0;
 }
 
+int CMenus::DoButton_Texture(const void *pID, int Texture, int Checked, const CUIRect *pRect)
+{
+	float SizeFac = 1.0f;
+	if(UI()->ActiveItem() == pID)
+		SizeFac = 0.95f;
+	else if(UI()->HotItem() == pID)
+		SizeFac = 1.05f;
+
+	Graphics()->TextureSet(Texture);
+
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+	float GrowW = pRect->w - pRect->w * SizeFac, GrowH = pRect->h - pRect->h * SizeFac;
+	IGraphics::CQuadItem QuadItem(pRect->x + GrowW * 0.5f, pRect->y + GrowH * 0.5f, pRect->w * SizeFac, pRect->h * SizeFac);
+	Graphics()->QuadsDrawTL(&QuadItem, 1);
+	Graphics()->QuadsEnd();
+
+	return UI()->DoButtonLogic(pID, "", Checked, pRect);
+}
+
 int CMenus::DoButton_Toggle(const void *pID, int Checked, const CUIRect *pRect, bool Active)
 {
 	Graphics()->TextureSet(g_pData->m_aImages[IMAGE_GUIBUTTONS].m_Id);
@@ -730,8 +751,13 @@ int CMenus::RenderMenubar(CUIRect r)
 		Box.VSplitRight(10.0f, &Box, &Button);
 		Box.VSplitRight(130.0f, &Box, &Button);
 		static int s_SettingsButton=0;
-		if(DoButton_MenuTab(&s_SettingsButton, Localize("Settings"), m_ActivePage==PAGE_SETTINGS, &Button, CUI::CORNER_T))
+		if(DoButton_MenuTab(&s_SettingsButton, Localize("Settings"), m_ActivePage==PAGE_SETTINGS, &Button, CUI::CORNER_TR))
 			NewPage = PAGE_SETTINGS;
+
+		Box.VSplitRight(130.0f, &Box, &Button);
+		static int s_ExtrasButton=0;
+		if(DoButton_MenuTab(&s_ExtrasButton, Localize("Extras"), m_ActivePage==PAGE_EXTRAS, &Button, CUI::CORNER_TL))
+			NewPage = PAGE_EXTRAS;
 	}
 
 	/*
@@ -754,12 +780,29 @@ int CMenus::RenderMenubar(CUIRect r)
 	return 0;
 }
 
+bool CMenus::Grow(float *pSrc, float To, float Speed)
+{
+	float Dist = (float)fabs(*pSrc - To);
+	if (Dist >= Speed*0.03f)
+	{
+		*pSrc += (Dist*Speed) * (To > *pSrc ? 1 : -1);
+		return true;
+	}
+	else
+	{
+		*pSrc = To;
+		return false;
+	}
+}
+
 void CMenus::RenderLoading()
 {
 	// TODO: not supported right now due to separate render thread
 
 	static int64 LastLoadRender = 0;
 	float Percent = m_LoadCurrent++/(float)m_LoadTotal;
+	//static float Percent = 0;
+	//Grow(&Percent, PercentStatic, 0.05);
 
 	// make sure that we don't render for each little thing we load
 	// because that will slow down loading if we have vsync
@@ -795,7 +838,7 @@ void CMenus::RenderLoading()
 	Graphics()->TextureSet(gs_TexturePaddel);
 	Graphics()->QuadsBegin();
 
-	Graphics()->SetColor(0.05f, 0.05f, 0.05f, 1.0f);
+	Graphics()->SetColor(0.5f, 0.5f, 0.5f, 1.0f);
 	IGraphics::CQuadItem QuadItem(AvatarRect.x, AvatarRect.y, AvatarRect.w, AvatarRect.h);
 	Graphics()->QuadsDrawTL(&QuadItem, 1);
 	Graphics()->QuadsEnd();
@@ -946,6 +989,8 @@ int CMenus::Render()
 				RenderServerControl(MainView);
 			else if(m_GamePage == PAGE_SETTINGS)
 				RenderSettings(MainView);
+			else if(m_GamePage == PAGE_EXTRAS)
+				RenderExtras(MainView);
 		}
 		else if(g_Config.m_UiPage == PAGE_INTERNET)
 			RenderServerbrowser(MainView);
@@ -957,6 +1002,8 @@ int CMenus::Render()
 			RenderServerbrowser(MainView);
 		else if(g_Config.m_UiPage == PAGE_SETTINGS)
 			RenderSettings(MainView);
+		else if(g_Config.m_UiPage == PAGE_EXTRAS)
+			RenderExtras(MainView);
 	}
 
 	DoPaddel();
@@ -1921,7 +1968,7 @@ void CMenus::DoMainButtons()
 					g_Config.m_UiPage = PAGE_INTERNET;
 				} break;
 
-			case MAINBUTTON_EXTRAS: break;
+			case MAINBUTTON_EXTRAS: g_Config.m_UiPage = PAGE_EXTRAS; break;
 			case MAINBUTTON_DEMOS: g_Config.m_UiPage = PAGE_DEMOS; break;
 			case MAINBUTTON_EDITOR: g_Config.m_ClEditor = 1; break;
 			case MAINBUTTON_SETTINGS: g_Config.m_UiPage = PAGE_SETTINGS; break;
@@ -2079,6 +2126,19 @@ void CMenus::DoPaddel()
 		Graphics()->QuadsDrawTL(&IGraphics::CQuadItem(m_PaddelPos.x-m_PaddelSize*0.5f, m_PaddelPos.y-m_PaddelSize*0.5f, m_PaddelSize, m_PaddelSize), 1);
 	}
 	Graphics()->QuadsEnd();
+
+	if(g_Config.m_UiPage == PAGE_PADDEL || g_Config.m_UiPage == PAGE_SELECT)
+	{
+		float mx = (m_MousePos.x/(float)Graphics()->ScreenWidth())*300*Graphics()->ScreenAspect();
+		float my = (m_MousePos.y/(float)Graphics()->ScreenHeight())*300;
+		if(m_Popup == POPUP_NONE && distance(m_PaddelPos, vec2(mx, my)) < m_PaddelSize*0.5f)
+		{
+			//m_PaddelWantedSize += 16;
+
+			if(UI()->MouseButtonClicked(0))
+				m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_PLAYER_SPAWN, 1.0f);
+		}
+	}
 
 	Graphics()->MapScreen(Screen.x, Screen.y, Screen.w, Screen.h);
 }

@@ -203,7 +203,7 @@ public:
 		char m_aClan[12];
 		int m_Country;
 		char m_aSkin[24];
-		int m_UseCostumColor;
+		int m_UseCustomColor;
 		int m_ColorBody;
 		int m_ColorFeet;
 
@@ -213,7 +213,7 @@ public:
 			mem_zero(&m_aClan, sizeof(m_aClan));
 			m_Country = -1;
 			mem_zero(&m_aSkin, sizeof(m_aSkin));
-			m_UseCostumColor = 0;
+			m_UseCustomColor = 0;
 			m_ColorBody = 0;
 			m_ColorFeet = 0;
 		}

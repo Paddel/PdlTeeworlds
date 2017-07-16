@@ -11,9 +11,9 @@ MACRO_CONFIG_INT(PdlDummyCam, pdl_dummy_cam, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAV
 MACRO_CONFIG_INT(PdlAutojoin, pdl_autojoin, 1, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Automatacly joins when the server has a free slot")
 
 MACRO_CONFIG_INT(PdlGamelayer, pdl_gamelayer, 0, 0, 1, CFGFLAG_CLIENT, "Show gamelayer")
-MACRO_CONFIG_INT(PdlGamelayerBack, pdl_gamelayer_back, 1, 0, 1, CFGFLAG_CLIENT, "Show gamelayer")
+MACRO_CONFIG_INT(PdlGamelayerBack, pdl_gamelayer_back, 1, 0, 1, CFGFLAG_CLIENT, "Show own background")
 
-MACRO_CONFIG_STR(PdlQuickMenuKey, pdl_quickmenu_key, 1, "c", CFGFLAG_CLIENT|CFGFLAG_SAVE, "Maps to rotate between")
+MACRO_CONFIG_STR(PdlQuickMenuKey, pdl_quickmenu_key, 1, "c", CFGFLAG_CLIENT|CFGFLAG_SAVE, "")
 
 MACRO_CONFIG_INT(PdlSaveJumpShift, pdl_savejump_shift, 0, -32, 32, CFGFLAG_CLIENT, "Shift the jump trigger")
 MACRO_CONFIG_INT(PdlSaveJumpShoot, pdl_savejump_shoot, 0, 0, 1, CFGFLAG_CLIENT, "Shoots when freezetile is thouched")
@@ -33,13 +33,15 @@ MACRO_CONFIG_INT(PdlBlockscoreCollect, pdl_blockscore_collect, 0, 0, 1, CFGFLAG_
 MACRO_CONFIG_INT(PdlBlockscoreDraw, pdl_blockscore_draw, 0, 0, 1, CFGFLAG_CLIENT, "draw Block score map")
 MACRO_CONFIG_INT(PdlBlockscoreShow, pdl_blockscore_show, 0, 0, 1, CFGFLAG_CLIENT, "Show the block scores of the players")
 MACRO_CONFIG_INT(PdlBlockscoreStay, pdl_blockscore_stay, 0, 0, 1, CFGFLAG_CLIENT, "Dont let the player leave the server")
-MACRO_CONFIG_INT(PdlBlockscoreShowType, pdl_blockscore_show_Type, 3, 0, 3, CFGFLAG_CLIENT, "Type of shown blockscore")
 MACRO_CONFIG_INT(PdlBlockscoreChat, pdl_blockscore_chat, 1, 0, 1, CFGFLAG_CLIENT, "Support the players by chat")
+MACRO_CONFIG_INT(PdlBlockscoreShowType, pdl_blockscore_show_Type, 3, 0, 3, CFGFLAG_CLIENT, "Type of shown blockscore")
 
 MACRO_CONFIG_INT(PdlAutorunActive, pdl_autorun_active, 0, 0, 1, CFGFLAG_CLIENT, "Active")
 MACRO_CONFIG_INT(PdlAutorunDraw, pdl_autorun_draw, 0, 0, 1, CFGFLAG_CLIENT, "draw autorun map")
 
 MACRO_CONFIG_INT(PdlBlockHelp, pdl_block_help, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Active")
+MACRO_CONFIG_INT(PdlBlockArrow, pdl_block_arrow, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows an arrow to locate the enemy")
+MACRO_CONFIG_INT(PdlBlockArrowDistance, pdl_block_arrow_distance, 512, 0, 1024, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Distance of the enemy to activate the arrow")
 
 MACRO_CONFIG_STR(PdlTranslateOtherFrom, pdl_translate_other_from, 8, "", CFGFLAG_CLIENT, "")
 MACRO_CONFIG_STR(PdlTranslateOtherTo, pdl_translate_other_to, 8, "de", CFGFLAG_CLIENT, "")
@@ -55,5 +57,12 @@ MACRO_CONFIG_INT(PdlGrenadeJump, pdl_grenade_jump, 0, 0, 1, CFGFLAG_CLIENT, "Act
 MACRO_CONFIG_INT(PdlAutoHideConsole, pdl_auto_hide_console, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Active")
 
 MACRO_CONFIG_INT(PdlUpdateIdentities, pdl_update_identities, 1, 0, 1, CFGFLAG_CLIENT, "UpdateIdentities")
+
+MACRO_CONFIG_INT(PdlShowParticles, pdl_show_particles, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show particles")
+
+MACRO_CONFIG_INT(PdlInputlockActive, pdl_inputlock_active, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Middle mousebutton to activate inputlock")
+MACRO_CONFIG_INT(PdlInputCopyPaste, pdl_input_copypaste, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enables Copy/Paste option on input")
+
+MACRO_CONFIG_INT(PdlFakeScoreboardOpen, pdl_fake_scoreboard_open, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fake an opened Scoreboard the fetch ping data")
 
 #endif

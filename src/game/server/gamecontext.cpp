@@ -415,14 +415,11 @@ void CGameContext::OnTick()
 
 	//if(world.paused) // make sure that the game object always updates
 	m_pController->Tick();
-
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	
+	for (int i = 0; i < m_Tees.size(); i++)
 	{
-		if(m_apPlayers[i])
-		{
-			m_apPlayers[i]->Tick();
-			m_apPlayers[i]->PostTick();
-		}
+		m_Tees[i]->Tick();
+		m_Tees[i]->PostTick();
 	}
 
 	// update voting
@@ -1570,10 +1567,9 @@ void CGameContext::OnSnap(int ClientID)
 	m_pController->Snap(ClientID);
 	m_Events.Snap(ClientID);
 
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for (int i = 0; i < m_Tees.size(); i++)
 	{
-		if(m_apPlayers[i])
-			m_apPlayers[i]->Snap(ClientID);
+		m_Tees[i]->Snap(ClientID);
 	}
 }
 void CGameContext::OnPreSnap() {}

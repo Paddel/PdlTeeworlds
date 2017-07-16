@@ -192,7 +192,7 @@ void CConsole::SetPrintOutputLevel(int Index, int OutputLevel)
 		m_aPrintCB[Index].m_OutputLevel = clamp(OutputLevel, (int)(OUTPUT_LEVEL_STANDARD), (int)(OUTPUT_LEVEL_DEBUG));
 }
 
-void CConsole::Print(int Level, const char *pFrom, const char *pStr)
+void CConsole::Print(int Level, int Type, const char *pFrom, const char *pStr)
 {
 	dbg_msg(pFrom ,"%s", pStr);
 	for(int i = 0; i < m_NumPrintCB; ++i)
@@ -201,7 +201,7 @@ void CConsole::Print(int Level, const char *pFrom, const char *pStr)
 		{
 			char aBuf[1024];
 			str_format(aBuf, sizeof(aBuf), "[%s]: %s", pFrom, pStr);
-			m_aPrintCB[i].m_pfnPrintCallback(aBuf, m_aPrintCB[i].m_pPrintCallbackUserdata);
+			m_aPrintCB[i].m_pfnPrintCallback(aBuf, m_aPrintCB[i].m_pPrintCallbackUserdata, Type);
 		}
 	}
 }
@@ -313,7 +313,7 @@ void CConsole::ExecuteLineStroked(int Stroke, const char *pStr)
 					{
 						char aBuf[256];
 						str_format(aBuf, sizeof(aBuf), "Invalid arguments... Usage: %s %s", pCommand->m_pName, pCommand->m_pParams);
-						Print(OUTPUT_LEVEL_STANDARD, "Console", aBuf);
+						Print(OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "Console", aBuf);
 					}
 					else if(m_StoreCommands && pCommand->m_Flags&CFGFLAG_STORE)
 					{
@@ -330,14 +330,14 @@ void CConsole::ExecuteLineStroked(int Stroke, const char *pStr)
 			{
 				char aBuf[256];
 				str_format(aBuf, sizeof(aBuf), "Access for command %s denied.", Result.m_pCommand);
-				Print(OUTPUT_LEVEL_STANDARD, "Console", aBuf);
+				Print(OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "Console", aBuf);
 			}
 		}
 		else if(Stroke)
 		{
 			char aBuf[256];
 			str_format(aBuf, sizeof(aBuf), "No such command: %s.", Result.m_pCommand);
-			Print(OUTPUT_LEVEL_STANDARD, "Console", aBuf);
+			Print(OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "Console", aBuf);
 		}
 
 		pStr = pNextPart;
@@ -414,7 +414,7 @@ void CConsole::ExecuteFile(const char *pFilename)
 		CLineReader lr;
 
 		str_format(aBuf, sizeof(aBuf), "executing '%s'", pFilename);
-		Print(IConsole::OUTPUT_LEVEL_STANDARD, "console", aBuf);
+		Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "console", aBuf);
 		lr.Init(File);
 
 		while((pLine = lr.Get()))
@@ -425,7 +425,7 @@ void CConsole::ExecuteFile(const char *pFilename)
 	else
 	{
 		str_format(aBuf, sizeof(aBuf), "failed to open '%s'", pFilename);
-		Print(IConsole::OUTPUT_LEVEL_STANDARD, "console", aBuf);
+		Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "console", aBuf);
 	}
 
 	m_pFirstExec = pPrev;
@@ -433,7 +433,7 @@ void CConsole::ExecuteFile(const char *pFilename)
 
 void CConsole::Con_Echo(IResult *pResult, void *pUserData)
 {
-	((CConsole*)pUserData)->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Console", pResult->GetString(0));
+	((CConsole*)pUserData)->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "Console", pResult->GetString(0));
 }
 
 void CConsole::Con_Exec(IResult *pResult, void *pUserData)
@@ -445,6 +445,7 @@ void CConsole::ConModCommandAccess(IResult *pResult, void *pUser)
 {
 	CConsole* pConsole = static_cast<CConsole *>(pUser);
 	char aBuf[128];
+	int OutputType = IConsole::OUTPUTTYPE_ERROR;
 	CCommand *pCommand = pConsole->FindCommand(pResult->GetString(0), CFGFLAG_SERVER);
 	if(pCommand)
 	{
@@ -455,11 +456,13 @@ void CConsole::ConModCommandAccess(IResult *pResult, void *pUser)
 		}
 		else
 			str_format(aBuf, sizeof(aBuf), "moderator access for '%s' is %s", pResult->GetString(0), pCommand->GetAccessLevel() ? "enabled" : "disabled");
+
+		OutputType = IConsole::OUTPUTTYPE_STANDARD;
 	}
 	else
 		str_format(aBuf, sizeof(aBuf), "No such command: '%s'.", pResult->GetString(0));
 
-	pConsole->Print(OUTPUT_LEVEL_STANDARD, "Console", aBuf);
+	pConsole->Print(OUTPUT_LEVEL_STANDARD, OutputType, "Console", aBuf);
 }
 
 void CConsole::ConModCommandStatus(IResult *pResult, void *pUser)
@@ -486,7 +489,7 @@ void CConsole::ConModCommandStatus(IResult *pResult, void *pUser)
 			}
 			else
 			{
-				pConsole->Print(OUTPUT_LEVEL_STANDARD, "Console", aBuf);
+				pConsole->Print(OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "Console", aBuf);
 				mem_zero(aBuf, sizeof(aBuf));
 				str_copy(aBuf, pCommand->m_pName, sizeof(aBuf));
 				Used = Length;
@@ -494,7 +497,7 @@ void CConsole::ConModCommandStatus(IResult *pResult, void *pUser)
 		}
 	}
 	if(Used > 0)
-		pConsole->Print(OUTPUT_LEVEL_STANDARD, "Console", aBuf);
+		pConsole->Print(OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "Console", aBuf);
 }
 
 struct CIntVariableData
@@ -535,7 +538,7 @@ static void IntVariableCommand(IConsole::IResult *pResult, void *pUserData)
 	{
 		char aBuf[1024];
 		str_format(aBuf, sizeof(aBuf), "Value: %d", *(pData->m_pVariable));
-		pData->m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Console", aBuf);
+		pData->m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "Console", aBuf);
 	}
 }
 
@@ -570,7 +573,7 @@ static void StrVariableCommand(IConsole::IResult *pResult, void *pUserData)
 	{
 		char aBuf[1024];
 		str_format(aBuf, sizeof(aBuf), "Value: %s", pData->m_pStr);
-		pData->m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "Console", aBuf);
+		pData->m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "Console", aBuf);
 	}
 }
 
@@ -578,6 +581,7 @@ void CConsole::ConToggle(IConsole::IResult *pResult, void *pUser)
 {
 	CConsole* pConsole = static_cast<CConsole *>(pUser);
 	char aBuf[128] = {0};
+	int OutputType = IConsole::OUTPUTTYPE_ERROR;
 	CCommand *pCommand = pConsole->FindCommand(pResult->GetString(0), pConsole->m_FlagMask);
 	if(pCommand)
 	{
@@ -599,6 +603,7 @@ void CConsole::ConToggle(IConsole::IResult *pResult, void *pUser)
 			str_format(aBuf, sizeof(aBuf), "%s %i", pResult->GetString(0), Val);
 			pConsole->ExecuteLine(aBuf);
 			aBuf[0] = 0;
+			OutputType = IConsole::OUTPUTTYPE_STANDARD;
 		}
 		else
 			str_format(aBuf, sizeof(aBuf), "Invalid command: '%s'.", pResult->GetString(0));
@@ -607,13 +612,14 @@ void CConsole::ConToggle(IConsole::IResult *pResult, void *pUser)
 		str_format(aBuf, sizeof(aBuf), "No such command: '%s'.", pResult->GetString(0));
 
 	if(aBuf[0] != 0)
-		pConsole->Print(OUTPUT_LEVEL_STANDARD, "Console", aBuf);
+		pConsole->Print(OUTPUT_LEVEL_STANDARD, OutputType, "Console", aBuf);
 }
 
 void CConsole::ConToggleStroke(IConsole::IResult *pResult, void *pUser)
 {
 	CConsole* pConsole = static_cast<CConsole *>(pUser);
 	char aBuf[128] = {0};
+	int OutputType = IConsole::OUTPUTTYPE_ERROR;
 	CCommand *pCommand = pConsole->FindCommand(pResult->GetString(1), pConsole->m_FlagMask);
 	if(pCommand)
 	{
@@ -632,6 +638,7 @@ void CConsole::ConToggleStroke(IConsole::IResult *pResult, void *pUser)
 			str_format(aBuf, sizeof(aBuf), "%s %i", pResult->GetString(1), Val);
 			pConsole->ExecuteLine(aBuf);
 			aBuf[0] = 0;
+			OutputType = IConsole::OUTPUTTYPE_STANDARD;
 		}
 		else
 			str_format(aBuf, sizeof(aBuf), "Invalid command: '%s'.", pResult->GetString(1));
@@ -640,7 +647,7 @@ void CConsole::ConToggleStroke(IConsole::IResult *pResult, void *pUser)
 		str_format(aBuf, sizeof(aBuf), "No such command: '%s'.", pResult->GetString(1));
 
 	if(aBuf[0] != 0)
-		pConsole->Print(OUTPUT_LEVEL_STANDARD, "Console", aBuf);
+		pConsole->Print(OUTPUT_LEVEL_STANDARD, OutputType, "Console", aBuf);
 }
 
 CConsole::CConsole(int FlagMask)
@@ -861,7 +868,7 @@ void CConsole::Chain(const char *pName, FChainCommandCallback pfnChainFunc, void
 	{
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "failed to chain '%s'", pName);
-		Print(IConsole::OUTPUT_LEVEL_DEBUG, "console", aBuf);
+		Print(IConsole::OUTPUT_LEVEL_DEBUG, IConsole::OUTPUTTYPE_ERROR, "console", aBuf);
 		return;
 	}
 

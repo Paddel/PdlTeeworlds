@@ -50,12 +50,8 @@ void CBlockScore::UpdateScores()
 		ClearClientName(aClientName);
 
 		str_format(aQuery, sizeof(aQuery), "SELECT * FROM %s.blockscore WHERE blockscore.name=\"%s\"", SCHEMA_NAME, aClientName);
-		int res = Query(aQuery);
-	
-		if(res == -1)
-			continue;
+		int res = Query(aQuery, &WriteBlockScore, &m_pClient->m_aClients[i]);
 
-		GetResult(&WriteBlockScore, &m_pClient->m_aClients[i]);//load
 	}
 }
 
@@ -102,14 +98,12 @@ void CBlockScore::PrintTop3()
 		aClientData[i].Reset();
 
 	str_format(aQuery, sizeof(aQuery), "SELECT * FROM %s.blockscore", SCHEMA_NAME);
-	int res = Query(aQuery);
+	int res = Query(aQuery, WriteTop3, aClientData);
 	
 	if(res == -1)
 	{//not found
 		return;
 	}
-
-	GetResult(WriteTop3, aClientData);//load
 
 	CChatReplyMsg Msg;
 	Msg.m_ClientID = -1;
@@ -292,15 +286,13 @@ void CBlockScore::WriteProfile(int ClientID, char *pName, int Type)
 	ClearClientName(aClientName);
 
 	str_format(aQuery, sizeof(aQuery), "SELECT * FROM %s.blockscore WHERE blockscore.name=\"%s\"", SCHEMA_NAME, aClientName);
-	int res = Query(aQuery);
+	int res = Query(aQuery, &WriteBlockScore, &aClientData);
 	
 	if(res == -1)
 	{//not found. create a new acc
 		WriteUncompleteProfile(aToName, ClientID, pName, Type, 0);
 		return;
 	}
-	else
-		GetResult(&WriteBlockScore, &aClientData);//load
 
 	int Activity = aClientData.m_BlockScore[Type-1][0] + aClientData.m_BlockScore[Type-1][1];
 	if(Activity < (int)MIN_BLOCK_NUM)
@@ -637,7 +629,7 @@ void CBlockScore::ConMapLoad(IConsole::IResult *pResult, void *pUserData)
 	IOHANDLE File = pThis->Storage()->OpenFile(aFilename, IOFLAG_READ, IStorage::TYPE_ALL);
 	if(!File)
 	{
-		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "WayBlock", "File not found.");
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "WayBlock", "File not found.");
 		return;
 	}
 
@@ -665,7 +657,7 @@ void CBlockScore::ConMapLoad(IConsole::IResult *pResult, void *pUserData)
 
 		if(Error)
 		{
-			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "WayBlock", "Map file does not fit!");
+			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "WayBlock", "Map file does not fit!");
 			break;
 		}
 	}
@@ -700,15 +692,15 @@ void CBlockScore::IncreaseScore(int ClientID, int Type, bool Loose)
 	ClearClientName(aClientName);
 
 	str_format(aQuery, sizeof(aQuery), "SELECT * FROM %s.blockscore WHERE blockscore.name=\"%s\"", SCHEMA_NAME, aClientName);
-	int res = Query(aQuery);
+	int res = Query(aQuery, WriteBlockScore, pClient);
 	
 	if(res == -1)
 	{//not found. create a new acc
 		mem_zero(&aQuery, sizeof(aQuery));
 		str_copy(aQuery, "INSERT INTO ", sizeof(aQuery));
-		FillBlockerInformation(aQuery, ClientID, aClientName);
+		FillBlockerInformation(aQuery, sizeof(aQuery), ClientID, aClientName);
 
-		res = Query(aQuery);
+		res = Query(aQuery, NULL, NULL);
 
 
 		if(res > 0)
@@ -717,8 +709,6 @@ void CBlockScore::IncreaseScore(int ClientID, int Type, bool Loose)
 			return;
 		}
 	}
-	else
-		GetResult(&WriteBlockScore, pClient);//load
 
 
 	//increase
@@ -728,31 +718,31 @@ void CBlockScore::IncreaseScore(int ClientID, int Type, bool Loose)
 	//save
 	mem_zero(&aQuery, sizeof(aQuery));
 	str_copy(aQuery, "REPLACE INTO ", sizeof(aQuery));
-	FillBlockerInformation(aQuery, ClientID, aClientName);
-	Query(aQuery);
+	FillBlockerInformation(aQuery, sizeof(aQuery), ClientID, aClientName);
+	Query(aQuery, NULL, NULL);
 }
 
-void CBlockScore::FillBlockerInformation(char *pStr, int ClientID, char *pName)
+void CBlockScore::FillBlockerInformation(char *pStr, int StringSize, int ClientID, char *pName)
 {
 	CGameClient::CClientData *pClient = &m_pClient->m_aClients[ClientID];
 
 	strcat(pStr, "blockscore(name, win_starblock, win_v3, win_wayblock, win_raceblock, loose_starblock, loose_v3, loose_wayblock, loose_raceblock) VALUES (");
-	AddQueryStr(pStr, pName);
+	AddQueryStr(pStr, pName, StringSize);
 	strcat(pStr, ", ");
-	AddQueryInt(pStr, pClient->m_BlockScore[3][0]);
+	AddQueryInt(pStr, pClient->m_BlockScore[3][0], StringSize);
 	strcat(pStr, ", ");
-	AddQueryInt(pStr, pClient->m_BlockScore[0][0]);
+	AddQueryInt(pStr, pClient->m_BlockScore[0][0], StringSize);
 	strcat(pStr, ", ");
-	AddQueryInt(pStr, pClient->m_BlockScore[1][0]);
+	AddQueryInt(pStr, pClient->m_BlockScore[1][0], StringSize);
 	strcat(pStr, ", ");
-	AddQueryInt(pStr, pClient->m_BlockScore[2][0]);
+	AddQueryInt(pStr, pClient->m_BlockScore[2][0], StringSize);
 	strcat(pStr, ", ");
-	AddQueryInt(pStr, pClient->m_BlockScore[3][1]);
+	AddQueryInt(pStr, pClient->m_BlockScore[3][1], StringSize);
 	strcat(pStr, ", ");
-	AddQueryInt(pStr, pClient->m_BlockScore[0][1]);
+	AddQueryInt(pStr, pClient->m_BlockScore[0][1], StringSize);
 	strcat(pStr, ", ");
-	AddQueryInt(pStr, pClient->m_BlockScore[1][1]);
+	AddQueryInt(pStr, pClient->m_BlockScore[1][1], StringSize);
 	strcat(pStr, ", ");
-	AddQueryInt(pStr, pClient->m_BlockScore[2][1]);
+	AddQueryInt(pStr, pClient->m_BlockScore[2][1], StringSize);
 	strcat(pStr, ");");
 }

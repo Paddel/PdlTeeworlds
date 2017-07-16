@@ -13,7 +13,7 @@ int CEcon::NewClientCallback(int ClientID, void *pUser)
 	net_addr_str(pThis->m_NetConsole.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "client accepted. cid=%d addr=%s'", ClientID, aAddrStr);
-	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "econ", aBuf);
+	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, IConsole::OUTPUTTYPE_STANDARD, "econ", aBuf);
 
 	pThis->m_aClients[ClientID].m_State = CClient::STATE_CONNECTED;
 	pThis->m_aClients[ClientID].m_TimeConnected = time_get();
@@ -31,13 +31,13 @@ int CEcon::DelClientCallback(int ClientID, const char *pReason, void *pUser)
 	net_addr_str(pThis->m_NetConsole.ClientAddr(ClientID), aAddrStr, sizeof(aAddrStr), true);
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "client dropped. cid=%d addr=%s reason='%s'", ClientID, aAddrStr, pReason);
-	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "econ", aBuf);
+	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, IConsole::OUTPUTTYPE_STANDARD, "econ", aBuf);
 
 	pThis->m_aClients[ClientID].m_State = CClient::STATE_EMPTY;
 	return 0;
 }
 
-void CEcon::SendLineCB(const char *pLine, void *pUserData)
+void CEcon::SendLineCB(const char *pLine, void *pUserData, int Type)
 {
 	static_cast<CEcon *>(pUserData)->Send(-1, pLine);
 }
@@ -93,7 +93,7 @@ void CEcon::Init(IConsole *pConsole, CNetBan *pNetBan)
 		m_Ready = true;
 		char aBuf[128];
 		str_format(aBuf, sizeof(aBuf), "bound to %s:%d", g_Config.m_EcBindaddr, g_Config.m_EcPort);
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD,"econ", aBuf);
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD,"econ", aBuf);
 
 		Console()->Chain("ec_output_level", ConchainEconOutputLevelUpdate, this);
 		m_PrintCBIndex = Console()->RegisterPrintCallback(g_Config.m_EcOutputLevel, SendLineCB, this);
@@ -101,7 +101,7 @@ void CEcon::Init(IConsole *pConsole, CNetBan *pNetBan)
 		Console()->Register("logout", "", CFGFLAG_ECON, ConLogout, this, "Logout of econ");
 	}
 	else
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD,"econ", "couldn't open socket. port might already be in use");
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR,"econ", "couldn't open socket. port might already be in use");
 }
 
 void CEcon::Update()
@@ -125,7 +125,7 @@ void CEcon::Update()
 				m_NetConsole.Send(ClientID, "Authentication successful. External console access granted.");
 
 				str_format(aBuf, sizeof(aBuf), "cid=%d authed", ClientID);
-				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "econ", aBuf);
+				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "econ", aBuf);
 			}
 			else
 			{
@@ -146,7 +146,7 @@ void CEcon::Update()
 		{
 			char aFormatted[256];
 			str_format(aFormatted, sizeof(aFormatted), "cid=%d cmd='%s'", ClientID, aBuf);
-			Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aFormatted);
+			Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, IConsole::OUTPUTTYPE_STANDARD, "server", aFormatted);
 			m_UserClientID = ClientID;
 			Console()->ExecuteLine(aBuf);
 			m_UserClientID = -1;

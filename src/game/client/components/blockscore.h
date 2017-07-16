@@ -40,7 +40,7 @@ private:
 	void DoBlockScores();
 
 	void IncreaseScore(int ClientID, int Type, bool Loose);
-	void FillBlockerInformation(char *pStr, int ClientID, char *pName);
+	void FillBlockerInformation(char *pStr, int StringSize, int ClientID, char *pName);
 
 	void UpdateScores();
 

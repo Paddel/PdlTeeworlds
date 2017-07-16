@@ -60,7 +60,7 @@ bool CLocalizationDatabase::Load(const char *pFilename, IStorage *pStorage, ICon
 
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "loaded '%s'", pFilename);
-	pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "localization", aBuf);
+	pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, IConsole::OUTPUTTYPE_STANDARD, "localization", aBuf);
 	m_Strings.clear();
 
 	char aOrigin[512];
@@ -79,14 +79,14 @@ bool CLocalizationDatabase::Load(const char *pFilename, IStorage *pStorage, ICon
 		char *pReplacement = LineReader.Get();
 		if(!pReplacement)
 		{
-			pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "localization", "unexpected end of file");
+			pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, IConsole::OUTPUTTYPE_ERROR, "localization", "unexpected end of file");
 			break;
 		}
 
 		if(pReplacement[0] != '=' || pReplacement[1] != '=' || pReplacement[2] != ' ')
 		{
 			str_format(aBuf, sizeof(aBuf), "malform replacement line for '%s'", aOrigin);
-			pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "localization", aBuf);
+			pConsole->Print(IConsole::OUTPUT_LEVEL_ADDINFO, IConsole::OUTPUTTYPE_ERROR, "localization", aBuf);
 			continue;
 		}
 

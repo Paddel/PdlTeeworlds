@@ -13,6 +13,7 @@ class CGameConsole : public CComponent
 	public:
 		struct CBacklogEntry
 		{
+			int m_OutputType;
 			float m_YOffset;
 			char m_aText[1];
 		};
@@ -47,7 +48,7 @@ class CGameConsole : public CComponent
 		void ExecuteLine(const char *pLine);
 
 		void OnInput(IInput::CEvent Event);
-		void PrintLine(const char *pLine);
+		void PrintLine(const char *pLine, int OutputType);
 
 		const char *GetString() const { return m_Input.GetString(); }
 		static void PossibleCommandsCompleteCallback(const char *pStr, void *pUser);
@@ -71,7 +72,7 @@ class CGameConsole : public CComponent
 	void Dump(int Type);
 
 	static void PossibleCommandsRenderCallback(const char *pStr, void *pUser);
-	static void ClientConsolePrintCallback(const char *pStr, void *pUserData);
+	static void ClientConsolePrintCallback(const char *pStr, void *pUserData, int OutputType);
 	static void ConToggleLocalConsole(IConsole::IResult *pResult, void *pUserData);
 	static void ConToggleRemoteConsole(IConsole::IResult *pResult, void *pUserData);
 	static void ConClearLocalConsole(IConsole::IResult *pResult, void *pUserData);
@@ -89,7 +90,7 @@ public:
 
 	CGameConsole();
 
-	void PrintLine(int Type, const char *pLine);
+	void PrintLine(int Type, const char *pLine, int OutputType);
 
 	virtual void OnStateChange(int NewState, int OldState);
 	virtual void OnConsoleInit();

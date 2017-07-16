@@ -1,6 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <engine/keys.h>
+#include <engine/shared/config.h>
 #include "lineinput.h"
 
 CLineInput::CLineInput()
@@ -43,8 +44,33 @@ bool CLineInput::Manipulate(IInput::CEvent e, char *pStr, int StrMaxSize, int St
 	int Code = e.m_Unicode;
 	int k = e.m_Key;
 
+	if(Code == 22 && g_Config.m_PdlInputCopyPaste)
+	{//paste
+		char *pPasting = ClipboardGet();
+		int PastinLength = str_length(pPasting);
+		for(int i = 0; i < PastinLength; i++)
+		{
+			int CharSize = 1;
+			if (Len < StrMaxSize - CharSize && CursorPos < StrMaxSize - CharSize && NumChars < StrMaxChars)
+			{
+				mem_move(pStr + CursorPos + CharSize, pStr + CursorPos, Len-CursorPos+1); // +1 == null term
+				pStr[CursorPos] = pPasting[i];
+				CursorPos += CharSize;
+				Len += CharSize;
+				if(CharSize > 0)
+					++NumChars;
+				Changes = true;
+			}
+			else
+				break;
+		}
+	}
+	else if(Code == 3 && g_Config.m_PdlInputCopyPaste)
+	{//copy
+		ClipboardSet(pStr, NumChars + 1);
+	}
 	// 127 is produced on Mac OS X and corresponds to the delete key
-	if (!(Code >= 0 && Code < 32) && Code != 127)
+	else if (!(Code >= 0 && Code < 32) && Code != 127)
 	{
 		char Tmp[8];
 		int CharSize = str_utf8_encode(Tmp, Code);

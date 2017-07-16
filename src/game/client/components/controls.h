@@ -32,6 +32,8 @@ private:
 	int m_SwiftDirection;
 	vec2 m_LastGrenadePos;
 	bool m_GrenadeDangerous;
+	bool m_InputLocked;
+	CNetObj_PlayerInput m_LockedInput;
 
 	static const int s_NumDirection = (int)(2 * 3.14f / 0.01f) + 1;
 	int m_DirectionHit[s_NumDirection];//grenade hit directions
@@ -81,5 +83,9 @@ public:
 	void GrenadeAim();
 	void Step();
 	void Vibrate();
+
+	void LockedInput();
+
+	bool GetInputLocked() const { return m_InputLocked; }
 };
 #endif

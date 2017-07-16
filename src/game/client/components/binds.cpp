@@ -39,7 +39,7 @@ void CBinds::Bind(int KeyID, const char *pStr, bool Alt)
 		str_format(aBuf, sizeof(aBuf), "unbound %s (%d)", Input()->KeyName(KeyID), KeyID);
 	else
 		str_format(aBuf, sizeof(aBuf), "bound %s (%d) = %s", Input()->KeyName(KeyID), KeyID, m_aaKeyBindings[KeyID](Alt));
-	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "binds", aBuf);
+	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "binds", aBuf);
 }
 
 
@@ -159,7 +159,7 @@ void CBinds::ConBind(IConsole::IResult *pResult, void *pUserData)
 	{
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "key %s not found", pKeyName);
-		pBinds->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "binds", aBuf);
+		pBinds->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "binds", aBuf);
 		return;
 	}
 
@@ -177,7 +177,7 @@ void CBinds::ConBindAlt(IConsole::IResult *pResult, void *pUserData)
 	{
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "key %s not found", pKeyName);
-		pBinds->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "binds", aBuf);
+		pBinds->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "binds", aBuf);
 		return;
 	}
 
@@ -201,7 +201,7 @@ void CBinds::ConUnbind(IConsole::IResult *pResult, void *pUserData)
 	{
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "key %s not found", pKeyName);
-		pBinds->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "binds", aBuf);
+		pBinds->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_ERROR, "binds", aBuf);
 		return;
 	}
 
@@ -228,7 +228,7 @@ void CBinds::ConDumpBinds(IConsole::IResult *pResult, void *pUserData)
 			if (pBinds->m_aaKeyBindings[i](Alt)[0] != 0)
 			{
 				str_format(aBuf, sizeof(aBuf), "%s%s (%d) = %s", Alt?"LAlt + " : "", pBinds->Input()->KeyName(i), i, pBinds->m_aaKeyBindings[i](Alt));
-				pBinds->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "binds", aBuf);
+				pBinds->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "binds", aBuf);
 			}
 		}
 	}

@@ -40,6 +40,11 @@
 	#include <fcntl.h>
 	#include <direct.h>
 	#include <errno.h>
+
+	#pragma comment(lib,"winmm.lib")
+	#pragma comment(lib, "Ws2_32.lib")
+	#pragma comment(lib, "User32.lib")
+	#pragma comment(lib, "Shell32.lib")
 #else
 	#error NOT IMPLEMENTED
 #endif
@@ -1582,6 +1587,25 @@ void str_format(char *buffer, int buffer_size, const char *format, ...)
 	buffer[buffer_size-1] = 0; /* assure null termination */
 }
 
+void str_fcat(char *buffer, int buffer_size, const char *format, ...)
+{
+	int len = str_length(buffer);
+
+#if defined(CONF_FAMILY_WINDOWS)
+	va_list ap;
+	va_start(ap, format);
+	_vsnprintf(buffer + len, buffer_size - len, format, ap);
+	va_end(ap);
+#else
+	va_list ap;
+	va_start(ap, format);
+	vsnprintf(buffer + len, buffer_size - len, format, ap);
+	va_end(ap);
+#endif
+
+	buffer[buffer_size - 1] = 0; /* assure null termination */
+}
+
 
 
 /* makes sure that the string only contains the characters between 32 and 127 */
@@ -2029,6 +2053,54 @@ void console_show()
 	ShowWindow(GetConsoleWindow(), SW_RESTORE);
 #endif
 }
+
+char *ClipboardGet()
+{
+#ifdef CONF_FAMILY_WINDOWS
+	HANDLE hData;
+	char *pTxt;
+
+	if (OpenClipboard(NULL) == 0)
+		return "";
+
+	hData = GetClipboardData(CF_TEXT);
+	if (hData == NULL)
+		return "";
+
+	pTxt = (char *)GlobalLock(hData);
+	GlobalUnlock(hData);
+	CloseClipboard();
+	return pTxt;
+#else
+	return "";
+#endif
+}
+
+void ClipboardSet(const char *pStr, int Size)
+{
+#ifdef CONF_FAMILY_WINDOWS
+	HGLOBAL hGlobal;
+
+	if (OpenClipboard(NULL) == 0)
+		return;
+
+	EmptyClipboard();
+	hGlobal = GlobalAlloc(GMEM_MOVEABLE, Size);
+	if (hGlobal == NULL)
+	{
+		CloseClipboard();
+		return;
+	}
+
+	memcpy(GlobalLock(hGlobal), pStr, Size);
+	GlobalUnlock(hGlobal);
+	SetClipboardData(CF_TEXT, hGlobal);
+	CloseClipboard();
+	GlobalFree(hGlobal);
+
+#endif
+}
+
 
 #if defined(__cplusplus)
 }

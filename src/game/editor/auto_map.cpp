@@ -110,7 +110,7 @@ void CAutoMapper::Load(const char* pTileName)
 	io_close(RulesFile);
 
 	str_format(aBuf, sizeof(aBuf),"loaded %s", aPath);
-	m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "editor", aBuf);
+	m_pEditor->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, IConsole::OUTPUTTYPE_STANDARD, "editor", aBuf);
 
 	m_FileLoaded = true;
 }
