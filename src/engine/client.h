@@ -9,7 +9,7 @@
 #include <engine/client/translate.h>
 #include <game/generated/protocol.h>
 
-#define MAX_DUMMIES 16
+#define MAX_DUMMIES 128
 
 class IClient : public IInterface
 {

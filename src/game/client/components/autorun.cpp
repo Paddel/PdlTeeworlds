@@ -33,6 +33,9 @@ void CAutoRun::OnInit()
 
 void CAutoRun::OnMapLoad()
 {
+	if(Layers()->GameLayer() == NULL)
+		return;
+
 	m_MapWidth = Layers()->GameLayer()->m_Width;
 	m_MapHeight = Layers()->GameLayer()->m_Height;
 	m_pTiles = new CTile[m_MapWidth*m_MapHeight];
