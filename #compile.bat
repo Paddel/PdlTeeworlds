@@ -7,6 +7,10 @@ if exist "%VCINSTALLDIR%" (
 )
 
 :: Check for Visual Studio
+if exist "%VS140COMNTOOLS%" (
+	set VSPATH="%VS140COMNTOOLS%"
+	goto set_env
+)
 if exist "%VS100COMNTOOLS%" (
 	set VSPATH="%VS100COMNTOOLS%"
 	goto set_env

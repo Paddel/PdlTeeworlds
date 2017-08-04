@@ -122,8 +122,8 @@ bool CAutoRun::OnInput(IInput::CEvent e)
 		{
 			vec2 MousePosWorld = m_pClient->m_pControls->m_TargetPos;
 
-			int Nx = clamp(round(MousePosWorld.x)/32, 0, m_MapWidth-1);
-			int Ny = clamp(round(MousePosWorld.y)/32, 0, m_MapHeight-1);
+			int Nx = clamp(int(round(MousePosWorld.x)/32), 0, m_MapWidth-1);
+			int Ny = clamp(int(round(MousePosWorld.y)/32), 0, m_MapHeight-1);
 			int Tile = Ny*m_MapWidth+Nx;
 
 			m_pTiles[Tile].m_Index = m_DrawMode;
@@ -318,8 +318,8 @@ void CAutoRun::SnapInput(CNetObj_PlayerInput *pInput, int ClientID, int DummyID)
 
 int CAutoRun::GetIndex(vec2 Pos)
 {
-	int Nx = clamp(round(Pos.x)/32, 0, m_MapWidth-1);
-	int Ny = clamp(round(Pos.y)/32, 0, m_MapHeight-1);
+	int Nx = clamp(int(round(Pos.x)/32), 0, m_MapWidth-1);
+	int Ny = clamp(int(round(Pos.y)/32), 0, m_MapHeight-1);
 	int Tile = Ny*m_MapWidth+Nx;
 	return m_pTiles[Tile].m_Index;
 }

@@ -2031,7 +2031,7 @@ void CMenus::DoPaddel()
 	static int64 s_SizeTime = 0;
 	if(s_SizeTime < time_get() && m_PaddelWantedSize != m_PaddelSize)
 	{
-		m_PaddelSize = abs(m_PaddelWantedSize-m_PaddelSize)<2?m_PaddelWantedSize:(m_PaddelWantedSize>m_PaddelSize?m_PaddelSize+2:m_PaddelSize-2);
+		m_PaddelSize = absolute(m_PaddelWantedSize-m_PaddelSize)<2?m_PaddelWantedSize:(m_PaddelWantedSize>m_PaddelSize?m_PaddelSize+2:m_PaddelSize-2);
 		s_SizeTime = time_get() + time_freq()*0.005f;
 	}
 

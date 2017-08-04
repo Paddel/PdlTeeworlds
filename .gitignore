@@ -60,3 +60,4 @@ Temporary Items
 .vs/PdlTeeworlds_d/v14/.suo
 *.sdf
 *.suo
+*.pyc

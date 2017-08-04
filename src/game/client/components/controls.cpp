@@ -357,7 +357,7 @@ void CControls::GrenadeKills()
 
 					//intersection
 					vec2 DifPos = EnemyPos[p][d]-Pos;
-					if (abs(DifPos.x) > 28 + 6 + 4 || abs(DifPos.y) > 28 + 6 + 4)//if one coordinate is over range
+					if (absolute(DifPos.x) > 28 + 6 + 4 || absolute(DifPos.y) > 28 + 6 + 4)//if one coordinate is over range
 						continue;
 					//if (DifPos.x*DifPos.x + DifPos.y * DifPos.y > 128)
 						//continue;
@@ -940,11 +940,11 @@ void CControls::Fly()
 	if((LocalChar.m_HookedPlayer != -1 && LocalChar.m_HookState == HOOK_GRABBED) || LocalChar.m_HookState == HOOK_RETRACTED)
 		m_InputData.m_Hook = 0;
 
-	if(abs(LocalVel.x) > s_VelAbscissaBorder && abs(LocalVel.y) > 700)
+	if(absolute(LocalVel.x) > s_VelAbscissaBorder && absolute(LocalVel.y) > 700)
 	{
 		m_InputData.m_Direction = LocalVel.x > 0? -1: 1;
 	}
-	else if(abs(PosDif.x) > 4)
+	else if(absolute(PosDif.x) > 4)
 	{
 		if(PosDif.x < -4)//maybe a bit tolerance
 			m_InputData.m_Direction = -1;
