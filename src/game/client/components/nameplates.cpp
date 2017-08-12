@@ -15,11 +15,6 @@ static void ConKeyInputState(IConsole::IResult *pResult, void *pUserData)
 	((int *)pUserData)[0] = pResult->GetInteger(0);
 }
 
-CNamePlates::CNamePlates()
-{
-	m_InputShowIds = 0;
-}
-
 void CNamePlates::RenderNameplate(
 	const CNetObj_Character *pPrevChar,
 	const CNetObj_Character *pPlayerChar,
@@ -31,7 +26,9 @@ void CNamePlates::RenderNameplate(
 	CNetObj_Character Char = *pPlayerChar;
 	CNetObj_Character PrevChar = *pPrevChar;
 
-	if(pPlayerInfo->m_Local && (g_Config.m_PdlNameplateOwn || m_InputShowIds))
+	bool ShowIDs = m_pClient->m_pControls->m_InputShowIDs == 1;
+
+	if(pPlayerInfo->m_Local && (g_Config.m_PdlNameplateOwn || ShowIDs))
 	{
 		m_pClient->m_PredictedChar.Write(&Char);
 		m_pClient->m_PredictedPrevChar.Write(&PrevChar);
@@ -65,10 +62,10 @@ void CNamePlates::RenderNameplate(
 
 		TextRender()->Text(0, Position.x-tw/2.0f, Position.y-FontSize-38.0f, FontSize, pName, -1);
 
-		if(g_Config.m_Debug || m_InputShowIds) // render client id when in debug aswell
+		if(g_Config.m_Debug || ShowIDs) // render client id when in debug aswell
 		{
 			char aBuf[128];
-			str_format(aBuf, sizeof(aBuf),"%d", pPlayerInfo->m_ClientID);
+			str_format(aBuf, sizeof(aBuf),"%02d", pPlayerInfo->m_ClientID);
 			float IDTextWidth = TextRender()->TextWidth(0, 19.0f, aBuf, -1);
 			TextRender()->Text(0, Position.x - IDTextWidth / 2, Position.y-82.0f, 19.0f, aBuf, -1);
 		}
@@ -90,18 +87,13 @@ void CNamePlates::RenderNameplate(
 		TextRender()->TextColor(1,1,1,1);
 		TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.3f);
 	}
-	else if(m_InputShowIds)
+	else if(ShowIDs)
 	{
 		char aBuf[128];
-		str_format(aBuf, sizeof(aBuf), "%d", pPlayerInfo->m_ClientID);
+		str_format(aBuf, sizeof(aBuf), "%02d", pPlayerInfo->m_ClientID);
 		float IDTextWidth = TextRender()->TextWidth(0, 19.0f, aBuf, -1);
 		TextRender()->Text(0, Position.x - IDTextWidth / 2, Position.y - 53.0f, 19.0f, aBuf, -1);
 	}
-}
-
-void CNamePlates::OnConsoleInit()
-{
-	Console()->Register("+show_ids", "", CFGFLAG_CLIENT, ConKeyInputState, &m_InputShowIds, "Show the IDs at top of the tees");
 }
 
 void CNamePlates::OnRender()

@@ -114,7 +114,8 @@ void CControls::OnConsoleInit()
 	Console()->Register("+block_set", "", CFGFLAG_CLIENT, ConKeyInputState, &m_FakeInputData[FAKEINPUT_BLOCK_SET], "Block");
 	Console()->Register("+grenade", "", CFGFLAG_CLIENT, ConKeyInputState, &m_FakeInputData[FAKEINPUT_GRENADEAIM], "Aimassistance for Grenade");
 	Console()->Register("+step", "", CFGFLAG_CLIENT, ConKeyInputState, &m_FakeInputData[FAKEINPUT_STEP], "Step");
-	Console()->Register("+vibrate", "", CFGFLAG_CLIENT, ConKeyInputState, &m_FakeInputData[FAKEINPUT_VIBRATE], "Step");
+	Console()->Register("+vibrate", "", CFGFLAG_CLIENT, ConKeyInputState, &m_FakeInputData[FAKEINPUT_VIBRATE], "Vibrate");
+	Console()->Register("+show_ids", "", CFGFLAG_CLIENT, ConKeyInputState, &m_InputShowIDs, "Show the IDs everywhere");
 
 	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 1}; Console()->Register("+weapon1", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to hammer"); }
 	{ static CInputSet s_Set = {this, &m_InputData.m_WantedWeapon, 2}; Console()->Register("+weapon2", "", CFGFLAG_CLIENT, ConKeyInputSet, (void *)&s_Set, "Switch to gun"); }

@@ -588,8 +588,8 @@ void CGameClient::DoClockStart()
 
 	int ts = time_timestamp();
 
-	str_format(aName, sizeof(aName), "[%i:%s%i]", time_hour(ts), time_minute(ts) < 10 ? "0" : "", time_minute(ts));
-	str_format(aClan, sizeof(aClan), "%s%i.%s%i.%i", time_day(ts) < 10 ? "0" : "", time_day(ts), time_month(ts)  < 10 ? "0" : "", time_month(ts), time_year(ts));
+	str_format(aName, sizeof(aName), "[%02d:%02d]", time_hour(ts), time_minute(ts));
+	str_format(aClan, sizeof(aClan), "%02d.%02d.%i", time_day(ts), time_month(ts), time_year(ts));
 
 	m_ClockColor = random()%(int)s_ClockSkinNum;
 
@@ -647,8 +647,8 @@ void CGameClient::DoClockMode()
 	int ColorBody = 0;
 	int ColorFeet = 0;
 
-	str_format(aName, sizeof(aName), "[%i:%s%i]", time_hour(ts), time_minute(ts) < 10 ? "0" : "", time_minute(ts));
-	str_format(aClan, sizeof(aClan), "%s%i.%s%i.%i", time_day(ts) < 10 ? "0" : "", time_day(ts), time_month(ts)  < 10 ? "0" : "", time_month(ts), time_year(ts));
+	str_format(aName, sizeof(aName), "[%02d:%02d]", time_hour(ts), time_minute(ts));
+	str_format(aClan, sizeof(aClan), "%02d.%02d.%i", time_day(ts), time_month(ts), time_year(ts));
 
 	m_ClockColor++;
 	if(m_ClockColor > s_ClockSkinNum)

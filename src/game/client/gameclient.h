@@ -124,6 +124,8 @@ public:
 
 	vec2 m_LocalCharacterPos;
 
+	int m_InputShowIds;//move this?
+
 	// predicted players
 	CCharacterCore m_PredictedPrevChar;
 	CCharacterCore m_PredictedChar;

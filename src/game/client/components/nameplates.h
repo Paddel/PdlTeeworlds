@@ -5,8 +5,6 @@
 
 class CNamePlates : public CComponent
 {
-	int m_InputShowIds;
-
 	void RenderNameplate(
 		const CNetObj_Character *pPrevChar,
 		const CNetObj_Character *pPlayerChar,
@@ -14,9 +12,6 @@ class CNamePlates : public CComponent
 	);
 
 public:
-	CNamePlates();
-
-	virtual void OnConsoleInit();
 	virtual void OnRender();
 };
 

@@ -587,6 +587,15 @@ void CChat::OnRender()
 		TextRender()->SetCursor(&Cursor, Begin, y, FontSize, TEXTFLAG_RENDER);
 		Cursor.m_LineWidth = LineWidth;
 
+		bool ShowIDs = m_pClient->m_pControls->m_InputShowIDs == 1;
+		if (ShowIDs && m_aLines[r].m_ClientID > -1 && m_aLines[r].m_aName[0] != '\0')
+		{
+			char aIDBuf[8];
+			str_format(aIDBuf, sizeof(aIDBuf), "%02d ", m_aLines[r].m_ClientID);
+			TextRender()->TextColor(0.5f, 0.5f, 0.5f, Blend);
+			TextRender()->TextEx(&Cursor, aIDBuf, -1);
+		}
+
 		// render name
 		if(m_aLines[r].m_Important)
 			TextRender()->TextColor(1.0f, 0.0f, 0.72f, Blend); // important

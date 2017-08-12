@@ -39,6 +39,7 @@ private:
 	vec2 m_LastFirePos;
 
 public:
+	int m_InputShowIDs;
 	int m_FakeInput;
 	int m_LastFakeInput;
 	int m_BlockingPlayer;
