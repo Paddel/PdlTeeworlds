@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #ifndef PDL_VARIABLES_H
 #define PDL_VARIABLES_H
 #undef PDL_VARIABLES_H // this file will be included several times
@@ -26,7 +25,7 @@ MACRO_CONFIG_INT(PdlClockMode, pdl_clock_mode, 0, 0, 1, CFGFLAG_CLIENT| CFGFLAG_
 MACRO_CONFIG_INT(PdlBlockInfo, pdl_blockinfo, 0, 0, 1, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show Block Info")
 MACRO_CONFIG_INT(PdlBlockInfoTicks, pdl_blockinfo_ticks, 40, 1, 100, CFGFLAG_CLIENT|CFGFLAG_SAVE, "Show Block Info")
 
-MACRO_CONFIG_INT(PdlZoom, pdl_zoom, 1, -32, 32, CFGFLAG_CLIENT, "Zoom")
+MACRO_CONFIG_INT(PdlZoom, pdl_zoom, 16, 1, 128, CFGFLAG_CLIENT, "Zoom")
 
 MACRO_CONFIG_INT(PdlBlockscoreActive, pdl_blockscore_active, 0, 0, 1, CFGFLAG_CLIENT, "Active")
 MACRO_CONFIG_INT(PdlBlockscoreCollect, pdl_blockscore_collect, 0, 0, 1, CFGFLAG_CLIENT, "Collect Block infos")
@@ -64,5 +63,18 @@ MACRO_CONFIG_INT(PdlInputlockActive, pdl_inputlock_active, 0, 0, 1, CFGFLAG_CLIE
 MACRO_CONFIG_INT(PdlInputCopyPaste, pdl_input_copypaste, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enables Copy/Paste option on input")
 
 MACRO_CONFIG_INT(PdlFakeScoreboardOpen, pdl_fake_scoreboard_open, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fake an opened Scoreboard the fetch ping data")
+MACRO_CONFIG_INT(PdlScoreboardDeadActive, pdl_scoreboard_dead_active, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows the scoreboard when you are dead")
+MACRO_CONFIG_STR(PdlScoreboardSortion, pdl_scoreboard_sortion, 16, "name", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Sortion of the scoreboard in DDRace-Mods (name/id/score/clan/latency/country)")
+
+MACRO_CONFIG_INT(PdlMapinkerEnabled, pdl_mapinker_enabled, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enables the MapInker")
+MACRO_CONFIG_INT(PdlMapinkerTimeEnable, pdl_mapinker_time_enable, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enables the MapInker-Timer")
+MACRO_CONFIG_INT(PdlMapinkerTimeFrom, pdl_mapinker_time_from, 20, 0, 24, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hour when Night-Design gets active")
+MACRO_CONFIG_INT(PdlMapinkerTimeTo, pdl_mapinker_time_to, 7, 0, 24, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hour when Night-Design gets deactivated")
+
+MACRO_CONFIG_INT(PdlBackgroundRipple, pdl_background_ribble, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Ripple animation in the background (shader)")
+MACRO_CONFIG_INT(PdlBackgroundRays, pdl_background_rays, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Rays in the background (shader)")
+
+MACRO_CONFIG_INT(PdlAutoRename, pdl_auto_rename, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically updates your information if it's not synchronized with the server")
+
 
 #endif

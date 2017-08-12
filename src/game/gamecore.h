@@ -1,15 +1,13 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #ifndef GAME_GAMECORE_H
 #define GAME_GAMECORE_H
 
 #include <base/system.h>
 #include <base/math.h>
-
-#include <math.h>
-#include "collision.h"
 #include <engine/shared/protocol.h>
 #include <game/generated/protocol.h>
+
+#include "collision.h"
 
 
 class CTuneParam
@@ -51,19 +49,19 @@ public:
 inline vec2 GetDirection(int Angle)
 {
 	float a = Angle/256.0f;
-	return vec2(cosf(a), sinf(a));
+	return vec2(cosinusf(a), sinusf(a));
 }
 
 inline vec2 GetDir(float Angle)
 {
-	return vec2(cosf(Angle), sinf(Angle));
+	return vec2(cosinusf(Angle), sinusf(Angle));
 }
 
 inline float GetAngle(vec2 Dir)
 {
 	if(Dir.x == 0 && Dir.y == 0)
 		return 0.0f;
-	float a = atanf(Dir.y/Dir.x);
+	float a = atangensf(Dir.y/Dir.x);
 	if(Dir.x < 0)
 		a = a+pi;
 	return a;

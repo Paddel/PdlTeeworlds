@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <engine/demo.h>
 #include <engine/engine.h>
 #include <engine/storage.h>
@@ -70,11 +69,11 @@ void CPlayers::RenderHand(CTeeRenderInfo *pInfo, vec2 CenterPos, vec2 Dir, float
 
 inline float NormalizeAngular(float f)
 {
-	return fmod(f+pi*2, pi*2);
+	return fmodulu(f+pi*2, pi*2);
 }
 
-inline float AngularMixDirection (float Src, float Dst) { return sinf(Dst-Src) >0?1:-1; }
-inline float AngularDistance(float Src, float Dst) { return asinf(sinf(Dst-Src)); }
+inline float AngularMixDirection (float Src, float Dst) { return sinusf(Dst-Src) >0?1:-1; }
+inline float AngularDistance(float Src, float Dst) { return asinusf(sinusf(Dst-Src)); }
 
 inline float AngularApproach(float Src, float Dst, float Amount)
 {
@@ -97,15 +96,14 @@ void CPlayers::RenderHook(
 	Prev = *pPrevChar;
 	Player = *pPlayerChar;
 
-	bool Endless = false;
-
-	if(Player.m_HookTick == 0 && Player.m_HookState == HOOK_GRABBED)
-		Endless = true;
-
 	CNetObj_PlayerInfo pInfo = *pPlayerInfo;
 	CTeeRenderInfo RenderInfo = m_aRenderInfo[pInfo.m_ClientID];
+	static bool aEndless[MAX_CLIENTS] = {};
 
 	float IntraTick = Client()->IntraGameTick();
+
+	if (Player.m_HookState == HOOK_GRABBED)
+		aEndless[pInfo.m_ClientID] = (Player.m_HookTick == 0);
 
 	// set size
 	RenderInfo.m_Size = 64.0f;
@@ -170,7 +168,7 @@ void CPlayers::RenderHook(
 		// render head
 		RenderTools()->SelectSprite(SPRITE_HOOK_HEAD);
 
-		if(Endless)
+		if(aEndless[pInfo.m_ClientID] == true)
 			Graphics()->SetColor(127/255.0f, 169/255.0f, 57/255.0f, 1.0f);
 		else
 			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -188,7 +186,7 @@ void CPlayers::RenderHook(
 			Array[i] = IGraphics::CQuadItem(p.x, p.y,24,16);
 		}
 
-		if(Endless)
+		if(aEndless[pInfo.m_ClientID] == true)
 			Graphics()->SetColor(127/255.0f, 169/255.0f, 57/255.0f, 1.0f);
 		else
 			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -247,10 +245,10 @@ void CPlayers::RenderPlayer(
 		float new_delta = delta - 2*mixspeed*sqrt(delta*sign)*sign + mixspeed*mixspeed;
 
 		// make sure that it doesn't vibrate when it's still
-		if(fabs(delta) < 2/256.0f)
+		if(fabsolute(delta) < 2/256.0f)
 			angle = target;
 		else
-			angle = angular_approach(current, target, fabs(delta-new_delta));
+			angle = angular_approach(current, target, fabsolute(delta-new_delta));
 
 		g_GameClient.m_aClients[info.cid].angle = angle;*/
 	}
@@ -293,7 +291,7 @@ void CPlayers::RenderPlayer(
 	bool WantOtherDir = (Player.m_Direction == -1 && Vel.x > 0) || (Player.m_Direction == 1 && Vel.x < 0);
 
 	// evaluate animation
-	float WalkTime = fmod(absolute(Position.x), 100.0f)/100.0f;
+	float WalkTime = fmodulu(absolute(Position.x), 100.0f)/100.0f;
 	CAnimState State;
 	State.Set(&g_pData->m_aAnimations[ANIM_BASE], 0);
 
@@ -385,7 +383,7 @@ void CPlayers::RenderPlayer(
 			// HADOKEN
 			if ((Client()->GameTick()-Player.m_AttackTick) <= (SERVER_TICK_SPEED / 6) && g_pData->m_Weapons.m_aId[iw].m_NumSpriteMuzzles)
 			{
-				int IteX = rand() % g_pData->m_Weapons.m_aId[iw].m_NumSpriteMuzzles;
+				int IteX = random() % g_pData->m_Weapons.m_aId[iw].m_NumSpriteMuzzles;
 				static int s_LastIteX = IteX;
 				if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 				{
@@ -428,7 +426,7 @@ void CPlayers::RenderPlayer(
 
 			float a = (Client()->GameTick()-Player.m_AttackTick+s_LastIntraTick)/5.0f;
 			if(a < 1)
-				Recoil = sinf(a*pi);
+				Recoil = sinusf(a*pi);
 			p = Position + Dir * g_pData->m_Weapons.m_aId[iw].m_Offsetx - Dir*Recoil*10.0f;
 			p.y += g_pData->m_Weapons.m_aId[iw].m_Offsety;
 			RenderTools()->DrawSprite(p.x, p.y, g_pData->m_Weapons.m_aId[iw].m_VisualSize);
@@ -447,7 +445,7 @@ void CPlayers::RenderPlayer(
 					Alpha = mix(2.0f, 0.0f, min(1.0f,max(0.0f,t)));
 				}
 
-				int IteX = rand() % g_pData->m_Weapons.m_aId[iw].m_NumSpriteMuzzles;
+				int IteX = random() % g_pData->m_Weapons.m_aId[iw].m_NumSpriteMuzzles;
 				static int s_LastIteX = IteX;
 				if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 				{
@@ -499,19 +497,6 @@ void CPlayers::RenderPlayer(
 		RenderTools()->RenderTee(&State, &Ghost, Player.m_Emote, Direction, GhostPosition); // render ghost
 	}
 
-	{
-		vec2 Pos = m_pClient->m_Snap.m_aCharacters[pInfo.m_ClientID].m_BlockInfoPos;
-		Graphics()->TextureSet(gs_TextureInvBlob);
-		Graphics()->QuadsBegin();
-
-		Graphics()->SetColor(RenderInfo.m_ColorBody.r, RenderInfo.m_ColorBody.g, RenderInfo.m_ColorBody.b, 1);
-
-		IGraphics::CQuadItem QuadItem(Pos.x, Pos.y, 32, 32);
-		Graphics()->QuadsDraw(&QuadItem, 1);
-
-		Graphics()->QuadsEnd();
-	}
-
 	if(m_pClient->m_pControls->m_BlockingPlayer == pInfo.m_ClientID)
 	{
 		Graphics()->TextureSet(gs_TextureInvBlob);
@@ -539,8 +524,8 @@ void CPlayers::RenderPlayer(
 			for (float i = CircleRate; i <= 2 * pi; i += 0.01f)
 			{
 				float ColorRate = i / (2 * pi);
-				vec2 PrevPos = Position + vec2(cosf(i - 0.01f - pi*0.5f), sinf(i - 0.01f - pi*0.5f)) * (32.0f + j*2);
-				vec2 Pos = Position + vec2(cosf(i - pi*0.5f), sinf(i - pi*0.5f)) * (32.0f + j * 2);
+				vec2 PrevPos = Position + vec2(cosinusf(i - 0.01f - pi*0.5f), sinusf(i - 0.01f - pi*0.5f)) * (32.0f + j*2);
+				vec2 Pos = Position + vec2(cosinusf(i - pi*0.5f), sinusf(i - pi*0.5f)) * (32.0f + j * 2);
 
 				Graphics()->SetColor(ColorRate, 0.0f, 0.0f, 0.6f);
 				IGraphics::CLineItem Line = IGraphics::CLineItem(PrevPos.x, PrevPos.y, Pos.x, Pos.y);
@@ -554,14 +539,6 @@ void CPlayers::RenderPlayer(
 	RenderInfo.m_Size = 64.0f; // force some settings
 	RenderInfo.m_ColorBody.a = 1.0f;
 	RenderInfo.m_ColorFeet.a = 1.0f;
-
-	if(m_pClient->m_Snap.m_aCharacters[pInfo.m_ClientID].m_WillBeBlocked)
-	{
-		RenderInfo.m_ColorBody.r = 0.0f;
-		RenderInfo.m_ColorBody.g = 0.0f;
-		RenderInfo.m_ColorBody.b = 0.0f;
-	}
-
 
 	if (g_Config.m_PdlGrenadeJump)
 	{
@@ -603,7 +580,7 @@ void CPlayers::RenderPlayer(
 		if (SinceStart < Client()->GameTickSpeed() / 5)
 			Wiggle = SinceStart / (Client()->GameTickSpeed() / 5.0);
 
-		float WiggleAngle = sinf(5*Wiggle);
+		float WiggleAngle = sinusf(5*Wiggle);
 
 		Graphics()->QuadsSetRotation(pi/6*WiggleAngle);
 
@@ -630,8 +607,6 @@ void CPlayers::RenderPlayer(
 
 void CPlayers::OnRender()
 {
-	//DoBlockInfo();
-
 	// update RenderInfo for ninja
 	bool IsTeamplay = false;
 	if(m_pClient->m_Snap.m_pGameInfoObj)
@@ -666,24 +641,10 @@ void CPlayers::OnRender()
 		{
 			// only render active characters
 			if(!m_pClient->m_Snap.m_aCharacters[i].m_Active)
-			{
 				continue;
-			}
 
 			void *pPrevInfo = Client()->SnapFindItem(IClient::SNAP_PREV, NETOBJTYPE_PLAYERINFO, i);
 			void *pInfo = Client()->SnapFindItem(IClient::SNAP_CURRENT, NETOBJTYPE_PLAYERINFO, i);
-			/*int Dummy = Client()->GetDummyControl();
-			if(Dummy == -1)
-			{
-				pPrevInfo = Client()->SnapFindItem(IClient::SNAP_PREV, NETOBJTYPE_PLAYERINFO, i);
-				pInfo = Client()->SnapFindItem(IClient::SNAP_CURRENT, NETOBJTYPE_PLAYERINFO, i);
-			}
-			else
-			{
-				pPrevInfo = Client()->SnapFindItemDummy(IClient::SNAP_PREV, NETOBJTYPE_PLAYERINFO, i, Dummy);
-				pInfo = Client()->SnapFindItemDummy(IClient::SNAP_CURRENT, NETOBJTYPE_PLAYERINFO, i, Dummy);
-			}*/
-
 			if(pPrevInfo && pInfo)
 			{
 				//
@@ -716,62 +677,4 @@ void CPlayers::OnInit()
 {
 	InitTextures();
 	Graphics()->AddTextureUser(this);
-}
-
-void CPlayers::DoBlockInfo()
-{
-	int LocalID = m_pClient->m_Snap.m_LocalClientID;
-	CNetObj_CharacterCore LocalChar;
-	vec2 LocalPos;
-	CWorldCore TempWorld;
-	CCharacterCore TempCore;
-
-	mem_zero(&TempCore, sizeof(TempCore));
-	TempCore.Init(&TempWorld, m_pClient->Collision());
-
-	if(LocalID < 0 || LocalID >= MAX_CLIENTS)
-		return;
-
-	m_pClient->m_aClients[LocalID].m_Predicted.Write(&LocalChar);
-	LocalPos = vec2(LocalChar.m_X, LocalChar.m_Y);
-
-	for(int i = 0; i < MAX_CLIENTS; i++)
-	{
-		if(LocalID == i)
-			continue;
-
-		CNetObj_CharacterCore Char = m_pClient->m_Snap.m_aCharacters[i].m_Cur;
-		if(m_pClient->m_Snap.m_aCharacters[i].m_Active == false)
-			continue;
-
-		if(m_pClient->m_pControls->m_BlockingPlayer != i)
-			continue;
-
-		TempCore.Read(&Char);
-
-		vec2 Dir = normalize(TempCore.m_Pos - LocalPos);
-		TempCore.m_Vel += vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f;
-
-		m_pClient->m_Snap.m_aCharacters[i].m_WillBeBlocked = false;
-		for(int t = 0; t < g_Config.m_PdlBlockInfoTicks; t++)//
-		{
-			Char.m_Tick++;
-			TempCore.Tick(false);
-			TempCore.Move();
-			TempCore.Quantize();
-
-			if(t > 2 && TempCore.m_Vel.y > 0)
-				break;
-
-			int FutureTile = m_pClient->Collision()->GetCollisionAt(TempCore.m_Pos);
-			if(FutureTile == 9)
-			{
-				m_pClient->m_Snap.m_aCharacters[i].m_WillBeBlocked = true;
-				break;
-			}
-		}
-
-		TempCore.Write(&Char);
-		m_pClient->m_Snap.m_aCharacters[i].m_BlockInfoPos = vec2(Char.m_X, Char.m_Y);
-	}
 }

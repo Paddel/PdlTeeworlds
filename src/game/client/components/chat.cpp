@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 
 #include <engine/engine.h>
 #include <engine/graphics.h>
@@ -148,18 +147,7 @@ bool CChat::OnInput(IInput::CEvent Event)
 				}
 				else
 				{
-					char aBuf[32];
-					str_copy(aBuf, ".Playercheck", sizeof(aBuf));
-					if(str_comp_num(m_Input.GetString(), aBuf, str_length(aBuf)) == 0)
-					{
-						if(str_length(m_Input.GetString()) >= str_length(aBuf)+2)
-						{
-							const char *pName = m_Input.GetString()+str_length(aBuf)+1;
-							m_pClient->m_pPlayerCollection->Check(pName);
-						}
-					}
-					else
-						Say(m_Mode == MODE_ALL ? 0 : 1, m_Input.GetString());
+					Say(m_Mode == MODE_ALL ? 0 : 1, m_Input.GetString());
 				}
 
 				AddEntry = true;
@@ -704,7 +692,7 @@ void CChat::TranslateChatOther(void *pResObj, char *pResult)
 {
 	CChat *pThis = (CChat *)pResObj;
 	char *pTransText = pThis->Client()->m_Translator.GetResult(pResult);
-	if(pTransText == NULL)
+	if(pTransText == 0x0)
 		return;
 
 	pThis->AddLine(-2, 0, pTransText);
@@ -716,7 +704,7 @@ void CChat::TranslateChat(void *pResObj, char *pResult)
 	CChat *pThis = (CChat *)pResObj;
 	char *pTransText = pThis->Client()->m_Translator.GetResult(pResult);
 	char aBuf[1024];
-	if(pTransText == NULL)
+	if(pTransText == 0x0)
 		return;
 	
 	pThis->EnableMode(MODE_ALL);

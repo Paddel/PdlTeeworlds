@@ -1,6 +1,4 @@
 
-#include <string.h>
-
 #include <base/system.h>
 #include <base/stringseperation.h>
 
@@ -32,7 +30,7 @@ CBlockScore::CBlockScore()
 {
 	m_MapWidth = 0;
 	m_MapHeight = 0;
-	m_pTiles = 0;
+	m_pTiles = 0x0;
 	m_DrawMode = 1;
 }
 
@@ -116,7 +114,7 @@ void CBlockScore::PrintTop3()
 	m_ChatReplyMsgs.add(Msg);
 }
 
-void CBlockScore::WriteTop3(int index, char *pResult, int pResultSize, void *pData)
+void CBlockScore::WriteTop3(int index, char *pResult, int pResultSize, void *pData, int Row, int MaxRows)
 {
 	CGameClient::CClientData *pClient = (CGameClient::CClientData *)pData;
 
@@ -127,14 +125,14 @@ void CBlockScore::WriteTop3(int index, char *pResult, int pResultSize, void *pDa
 	switch(index)
 	{
 		case 0: str_copy(ClientData.m_aName, pResult?pResult:"", sizeof(ClientData.m_aName));
-		case 1: ClientData.m_BlockScore[3][0] = atoi(pResult); break;
-		case 2: ClientData.m_BlockScore[0][0] = atoi(pResult); break;
-		case 3: ClientData.m_BlockScore[1][0] = atoi(pResult); break;
-		case 4: ClientData.m_BlockScore[2][0] = atoi(pResult); break;
-		case 5: ClientData.m_BlockScore[3][1] = atoi(pResult); break;
-		case 6: ClientData.m_BlockScore[0][1] = atoi(pResult); break;
-		case 7: ClientData.m_BlockScore[1][1] = atoi(pResult); break;
-		case 8: ClientData.m_BlockScore[2][1] = atoi(pResult); break;
+		case 1: ClientData.m_BlockScore[3][0] = str_toint(pResult); break;
+		case 2: ClientData.m_BlockScore[0][0] = str_toint(pResult); break;
+		case 3: ClientData.m_BlockScore[1][0] = str_toint(pResult); break;
+		case 4: ClientData.m_BlockScore[2][0] = str_toint(pResult); break;
+		case 5: ClientData.m_BlockScore[3][1] = str_toint(pResult); break;
+		case 6: ClientData.m_BlockScore[0][1] = str_toint(pResult); break;
+		case 7: ClientData.m_BlockScore[1][1] = str_toint(pResult); break;
+		case 8: ClientData.m_BlockScore[2][1] = str_toint(pResult); break;
 	}
 	
 	if(index != 8)
@@ -166,8 +164,8 @@ void CBlockScore::WriteTop3(int index, char *pResult, int pResultSize, void *pDa
 
 int CBlockScore::GetIndex(vec2 Pos)
 {
-	int Nx = clamp(int(round(Pos.x)/32), 0, m_MapWidth-1);
-	int Ny = clamp(int(round(Pos.y)/32), 0, m_MapHeight-1);
+	int Nx = clamp(int(round_to_int(Pos.x)/32), 0, m_MapWidth-1);
+	int Ny = clamp(int(round_to_int(Pos.y)/32), 0, m_MapHeight-1);
 	int Tile = Ny*m_MapWidth+Nx;
 	return m_pTiles[Tile].m_Index;
 }
@@ -444,7 +442,7 @@ void CBlockScore::OnRender()
 		Graphics()->GetScreen(&Screen.x, &Screen.y, &Screen.w, &Screen.h);
 
 		RenderTools()->MapscreenToWorld(Center.x, Center.y, 1.0f, 1.0f,
-			0, 0, Graphics()->ScreenAspect(), g_Config.m_PdlZoom, Points);
+			0, 0, Graphics()->ScreenAspect(), g_Config.m_PdlZoom / 16.0f, Points);
 		Graphics()->MapScreen(Points[0], Points[1], Points[2], Points[3]);
 
 		Graphics()->TextureSet(gs_TextureBlockScore);
@@ -452,10 +450,10 @@ void CBlockScore::OnRender()
 		Graphics()->BlendNone();
 		vec4 Color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		RenderTools()->RenderTilemap(m_pTiles, m_MapWidth, m_MapHeight, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
-										NULL, this, -1, 0);
+										0x0, this, -1, 0);
 		Graphics()->BlendNormal();
 		RenderTools()->RenderTilemap(m_pTiles, m_MapWidth, m_MapHeight, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
-										NULL, this, -1, 0);
+										0x0, this, -1, 0);
 
 		Graphics()->MapScreen(Screen.x, Screen.y, Screen.w, Screen.h);
 	}
@@ -472,8 +470,8 @@ bool CBlockScore::OnInput(IInput::CEvent e)
 		{
 			vec2 MousePosWorld = m_pClient->m_pControls->m_TargetPos;
 
-			int Nx = clamp(int(round(MousePosWorld.x)/32), 0, m_MapWidth-1);
-			int Ny = clamp(int(round(MousePosWorld.y)/32), 0, m_MapHeight-1);
+			int Nx = clamp(int(round_to_int(MousePosWorld.x)/32), 0, m_MapWidth-1);
+			int Ny = clamp(int(round_to_int(MousePosWorld.y)/32), 0, m_MapHeight-1);
 			int Tile = Ny*m_MapWidth+Nx;
 
 			m_pTiles[Tile].m_Index = m_DrawMode;
@@ -511,8 +509,11 @@ bool CBlockScore::OnInput(IInput::CEvent e)
 
 void CBlockScore::OnMapLoad()
 {
-	if(Layers()->GameLayer() == NULL)
+	if(Layers()->GameLayer() == 0x0)
 		return;
+
+	if (m_pTiles != 0x0)
+		delete [] m_pTiles;
 
 	m_MapWidth = Layers()->GameLayer()->m_Width;
 	m_MapHeight = Layers()->GameLayer()->m_Height;
@@ -610,7 +611,7 @@ void CBlockScore::ConMapSave(IConsole::IResult *pResult, void *pUserData)
 	{
 		for(int i = 0; i < pThis->MapWidth()*pThis->MapHeight(); i++)
 		{
-			itoa(pThis->MapTiles()[i].m_Index, aBuf, 10);
+			str_format(aBuf, sizeof(aBuf), "%i", pThis->MapTiles()[i].m_Index);
 			io_write(File, aBuf, 1);
 		}
 		io_close(File);
@@ -653,7 +654,7 @@ void CBlockScore::ConMapLoad(IConsole::IResult *pResult, void *pUserData)
 
 			char IndexChar[3];
 			str_format(IndexChar, sizeof(IndexChar), "%c", (char *)pLine[i]);
-			int Index = atoi(IndexChar);
+			int Index = str_toint(IndexChar);
 			pTiles[Tile].m_Index = Index;
 			Tile++;
 		}
@@ -666,19 +667,19 @@ void CBlockScore::ConMapLoad(IConsole::IResult *pResult, void *pUserData)
 	}
 }
 
-void CBlockScore::WriteBlockScore(int index, char *pResult, int pResultSize, void *pData)
+void CBlockScore::WriteBlockScore(int index, char *pResult, int pResultSize, void *pData, int Row, int MaxRows)
 {
 	CGameClient::CClientData *pClient = (CGameClient::CClientData *)pData;
 	switch(index)
 	{
-		case 1: pClient->m_BlockScore[3][0] = atoi(pResult); break;
-		case 2: pClient->m_BlockScore[0][0] = atoi(pResult); break;
-		case 3: pClient->m_BlockScore[1][0] = atoi(pResult); break;
-		case 4: pClient->m_BlockScore[2][0] = atoi(pResult); break;
-		case 5: pClient->m_BlockScore[3][1] = atoi(pResult); break;
-		case 6: pClient->m_BlockScore[0][1] = atoi(pResult); break;
-		case 7: pClient->m_BlockScore[1][1] = atoi(pResult); break;
-		case 8: pClient->m_BlockScore[2][1] = atoi(pResult); break;
+		case 1: pClient->m_BlockScore[3][0] = str_toint(pResult); break;
+		case 2: pClient->m_BlockScore[0][0] = str_toint(pResult); break;
+		case 3: pClient->m_BlockScore[1][0] = str_toint(pResult); break;
+		case 4: pClient->m_BlockScore[2][0] = str_toint(pResult); break;
+		case 5: pClient->m_BlockScore[3][1] = str_toint(pResult); break;
+		case 6: pClient->m_BlockScore[0][1] = str_toint(pResult); break;
+		case 7: pClient->m_BlockScore[1][1] = str_toint(pResult); break;
+		case 8: pClient->m_BlockScore[2][1] = str_toint(pResult); break;
 	}
 }
 
@@ -703,7 +704,7 @@ void CBlockScore::IncreaseScore(int ClientID, int Type, bool Loose)
 		str_copy(aQuery, "INSERT INTO ", sizeof(aQuery));
 		FillBlockerInformation(aQuery, sizeof(aQuery), ClientID, aClientName);
 
-		res = Query(aQuery, NULL, NULL);
+		res = Query(aQuery, 0x0, 0x0);
 
 
 		if(res > 0)
@@ -722,30 +723,30 @@ void CBlockScore::IncreaseScore(int ClientID, int Type, bool Loose)
 	mem_zero(&aQuery, sizeof(aQuery));
 	str_copy(aQuery, "REPLACE INTO ", sizeof(aQuery));
 	FillBlockerInformation(aQuery, sizeof(aQuery), ClientID, aClientName);
-	Query(aQuery, NULL, NULL);
+	Query(aQuery, 0x0, 0x0);
 }
 
 void CBlockScore::FillBlockerInformation(char *pStr, int StringSize, int ClientID, char *pName)
 {
 	CGameClient::CClientData *pClient = &m_pClient->m_aClients[ClientID];
 
-	strcat(pStr, "blockscore(name, win_starblock, win_v3, win_wayblock, win_raceblock, loose_starblock, loose_v3, loose_wayblock, loose_raceblock) VALUES (");
+	str_append(pStr, "blockscore(name, win_starblock, win_v3, win_wayblock, win_raceblock, loose_starblock, loose_v3, loose_wayblock, loose_raceblock) VALUES (", StringSize);
 	AddQueryStr(pStr, pName, StringSize);
-	strcat(pStr, ", ");
+	str_append(pStr, ", ", StringSize);
 	AddQueryInt(pStr, pClient->m_BlockScore[3][0], StringSize);
-	strcat(pStr, ", ");
+	str_append(pStr, ", ", StringSize);
 	AddQueryInt(pStr, pClient->m_BlockScore[0][0], StringSize);
-	strcat(pStr, ", ");
+	str_append(pStr, ", ", StringSize);
 	AddQueryInt(pStr, pClient->m_BlockScore[1][0], StringSize);
-	strcat(pStr, ", ");
+	str_append(pStr, ", ", StringSize);
 	AddQueryInt(pStr, pClient->m_BlockScore[2][0], StringSize);
-	strcat(pStr, ", ");
+	str_append(pStr, ", ", StringSize);
 	AddQueryInt(pStr, pClient->m_BlockScore[3][1], StringSize);
-	strcat(pStr, ", ");
+	str_append(pStr, ", ", StringSize);
 	AddQueryInt(pStr, pClient->m_BlockScore[0][1], StringSize);
-	strcat(pStr, ", ");
+	str_append(pStr, ", ", StringSize);
 	AddQueryInt(pStr, pClient->m_BlockScore[1][1], StringSize);
-	strcat(pStr, ", ");
+	str_append(pStr, ", ", StringSize);
 	AddQueryInt(pStr, pClient->m_BlockScore[2][1], StringSize);
-	strcat(pStr, ");");
+	str_append(pStr, ");", StringSize);
 }

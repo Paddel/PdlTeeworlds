@@ -1,8 +1,8 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 
 #include <base/detect.h>
 #include <base/math.h>
+#include <base/math_complex.h>
 #include <base/tl/threading.h>
 
 #define NO_SDL_GLEXT
@@ -19,8 +19,6 @@
 #include <engine/storage.h>
 #include <engine/keys.h>
 #include <engine/console.h>
-
-#include <math.h> // cosf, sinf
 
 #include "graphics.h"
 
@@ -107,8 +105,8 @@ void CGraphics_OpenGL::AddVertices(int Count)
 
 void CGraphics_OpenGL::Rotate4(const CPoint &rCenter, CVertex *pPoints)
 {
-	float c = cosf(m_Rotation);
-	float s = sinf(m_Rotation);
+	float c = cosinusf(m_Rotation);
+	float s = sinusf(m_Rotation);
 	float x, y;
 	int i;
 
@@ -838,7 +836,7 @@ void CGraphics_OpenGL::FrameBufferToScreen()
 
 void CGraphics_OpenGL::FrameBufferBegin(int Index)
 {
-	if(Index > NUM_FBO || Index < 0)
+	if(Index >= NUM_FBO || Index < 0)
 	{
 		dbg_msg("gfx", "failed to set framebuffer (invalid index)");
 		return;
@@ -867,6 +865,7 @@ void CGraphics_OpenGL::FrameBufferEnd()
 	glFlush();
 
 	glDisable(GL_TEXTURE_2D);
+	m_FrameBufferObjectId = -1;
 }
 
 void CGraphics_OpenGL::FrameBufferInit()
@@ -1005,8 +1004,11 @@ void CGraphics_OpenGL::InitShader()
 
 	LoadShader(SHADER_BUTTON, SOURCE_BUTTON_VERTEX, SOURCE_BUTTON_FRAGMENT);
 	LoadShader(SHADER_LOAD, SOURCE_LOAD_VERTEX, SOURCE_LOAD_FRAGMENT);
-	LoadShader(SHADER_BLUR, SOURCE_BLUR_VERTEX, SOURCE_BLUR_FRAGMENT);
+	//LoadShader(SHADER_BLUR, SOURCE_BLUR_VERTEX, SOURCE_BLUR_FRAGMENT);
 	LoadShader(SHADER_GRAYSCALE, SOURCE_GRAYSCALE_VERTEX, SOURCE_GRAYSCALE_FRAGMENT);
+	LoadShader(SHADER_RIPPLE, SOURCE_RIPPLE_VERTEX, SOURCE_RIPPLE_FRAGMENT);
+	LoadShader(SHADER_RAYS, SOURCE_RAYS_VERTEX, SOURCE_RAYS_FRAGMENT);
+	LoadShader(SHADER_LOADGREY, SOURCE_LOADGREY_VERTEX, SOURCE_LOADGREY_FRAGMENT);
 }
 
 void CGraphics_OpenGL::LoadShader(int Shader, const char *vs, const char *fs)

@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #ifndef ENGINE_CLIENT_H
 #define ENGINE_CLIENT_H
 #include "kernel.h"
@@ -9,7 +8,7 @@
 #include <engine/client/translate.h>
 #include <game/generated/protocol.h>
 
-#define MAX_DUMMIES 128
+#define MAX_DUMMIES 8
 
 class IClient : public IInterface
 {
@@ -104,6 +103,8 @@ public:
 	//
 	virtual int MapDownloadAmount() = 0;
 	virtual int MapDownloadTotalsize() = 0;
+	virtual unsigned CurrentMapCrc() = 0;
+	virtual char *CurrentMapName() = 0;
 
 	// input
 	virtual int *GetInput(int Tick) = 0;
@@ -227,6 +228,7 @@ public:
 	virtual void OnEnterGame() = 0;
 	virtual void OnShutdown() = 0;
 	virtual void OnRender() = 0;
+	virtual void OnTick() = 0;
 	virtual void OnStateChange(int NewState, int OldState) = 0;
 	virtual void OnConnected() = 0;
 	virtual void OnMessage(int MsgID, CUnpacker *pUnpacker) = 0;

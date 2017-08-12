@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
 #include <game/generated/protocol.h>
@@ -69,12 +68,12 @@ void CEmoticon::DrawCircle(float x, float y, float r, int Segments)
 		float a1 = i/FSegments * 2*pi;
 		float a2 = (i+1)/FSegments * 2*pi;
 		float a3 = (i+2)/FSegments * 2*pi;
-		float Ca1 = cosf(a1);
-		float Ca2 = cosf(a2);
-		float Ca3 = cosf(a3);
-		float Sa1 = sinf(a1);
-		float Sa2 = sinf(a2);
-		float Sa3 = sinf(a3);
+		float Ca1 = cosinusf(a1);
+		float Ca2 = cosinusf(a2);
+		float Ca3 = cosinusf(a3);
+		float Sa1 = sinusf(a1);
+		float Sa2 = sinusf(a2);
+		float Sa3 = sinusf(a3);
 
 		Array[NumItems++] = IGraphics::CFreeformItem(
 			x, y,
@@ -146,8 +145,8 @@ void CEmoticon::OnRender()
 
 		float Size = Selected ? 80.0f : 50.0f;
 
-		float NudgeX = 150.0f * cosf(Angle);
-		float NudgeY = 150.0f * sinf(Angle);
+		float NudgeX = 150.0f * cosinusf(Angle);
+		float NudgeY = 150.0f * sinusf(Angle);
 		RenderTools()->SelectSprite(SPRITE_OOP + i);
 		IGraphics::CQuadItem QuadItem(Screen.w/2 + NudgeX, Screen.h/2 + NudgeY, Size, Size);
 		Graphics()->QuadsDraw(&QuadItem, 1);

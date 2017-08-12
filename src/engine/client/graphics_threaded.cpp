@@ -1,9 +1,9 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 
 #include <base/detect.h>
 #include <base/math.h>
 #include <base/tl/threading.h>
+#include <base/math_complex.h>
 
 #include <base/system.h>
 #include <engine/external/pnglite/pnglite.h>
@@ -13,8 +13,6 @@
 #include <engine/storage.h>
 #include <engine/keys.h>
 #include <engine/console.h>
-
-#include <math.h> // cosf, sinf
 
 #include "graphics_threaded.h"
 
@@ -60,7 +58,7 @@ void CGraphics_Threaded::FlushVertices()
 	}
 	else if(m_Drawing == DRAWING_TRIANGLE)
 	{
-		Cmd.m_PrimType = CCommandBuffer::PRIMTYPE_TRIANGLE;
+		Cmd.m_PrimType = CCommandBuffer::PRIMTYPE_TRIANGLES;
 		Cmd.m_PrimCount = NumVerts/3;
 	}
 	else if(m_Drawing == DRAWING_LINES)
@@ -117,8 +115,8 @@ void CGraphics_Threaded::AddVertices(int Count)
 
 void CGraphics_Threaded::Rotate4(const CCommandBuffer::SPoint &rCenter, CCommandBuffer::SVertex *pPoints)
 {
-	float c = cosf(m_Rotation);
-	float s = sinf(m_Rotation);
+	float c = cosinusf(m_Rotation);
+	float s = sinusf(m_Rotation);
 	float x, y;
 	int i;
 

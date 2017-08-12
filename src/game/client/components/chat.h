@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #ifndef GAME_CLIENT_COMPONENTS_CHAT_H
 #define GAME_CLIENT_COMPONENTS_CHAT_H
 #include <engine/shared/ringbuffer.h>
@@ -23,7 +22,7 @@ class CChat : public CComponent
 		int m_Team;
 		int m_NameColor;
 		char m_aName[64];
-		char m_aText[512];
+		char m_aText[1024];
 		bool m_Highlighted;
 		bool m_Important;
 	};

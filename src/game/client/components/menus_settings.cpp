@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 
 #include <base/math.h>
 
@@ -213,7 +212,7 @@ void CMenus::RenderSettingsPlayer(CUIRect MainView)
 
 	if(s_ClipboardCheck < time_get())
 	{
-		char *pClipboard = ClipboardGet();
+		char *pClipboard = clipboard_get();
 		if(str_comp_num(pClipboard, "Identity\r\n", str_length("Identity\r\n"))  == 0 && str_length(pClipboard) < 512)
 		{
 			s_PasteAble = true;
@@ -227,7 +226,7 @@ void CMenus::RenderSettingsPlayer(CUIRect MainView)
 	if(s_PasteAble)
 	{
 		Button.VSplitLeft(Button.w+8, 0, &Button);
-		Button.VSplitLeft(64.0f, &Button, NULL);
+		Button.VSplitLeft(64.0f, &Button, 0x0);
 		static int s_PasteButton = 0;
 		if(DoButton_Menu((void*)&s_PasteButton, Localize("Paste"), 0, &Button))
 		{
@@ -313,7 +312,7 @@ void CMenus::RenderSettingsTee(CUIRect MainView)
 
 	Label.VSplitLeft(Label.w+8, 0, &Label);
 	Label.VSplitLeft(126.0f, &Label, 0);
-	Label.HSplitTop(32.0f, &Label, NULL);
+	Label.HSplitTop(32.0f, &Label, 0x0);
 	static int s_PaddelButton = 0;
 	if(DoButton_Menu((void*)&s_PaddelButton, Localize("Paddel"), 0, &Label))
 	{
@@ -329,7 +328,7 @@ void CMenus::RenderSettingsTee(CUIRect MainView)
 
 	if(s_ClipboardCheck < time_get())
 	{
-		char *pClipboard = ClipboardGet();
+		char *pClipboard = clipboard_get();
 		if(str_comp_num(pClipboard, "Identity\r\n", str_length("Identity\r\n"))  == 0 && str_length(pClipboard) < 512)
 		{
 			s_PasteAble = true;
@@ -342,8 +341,8 @@ void CMenus::RenderSettingsTee(CUIRect MainView)
 		
 	if(s_PasteAble)
 	{
-		Label.HSplitTop(38.0f, NULL, &Label);
-		Label.HSplitTop(32.0f, &Label, NULL);
+		Label.HSplitTop(38.0f, 0x0, &Label);
+		Label.HSplitTop(32.0f, &Label, 0x0);
 		static int s_PasteButton = 0;
 		if(DoButton_Menu((void*)&s_PasteButton, Localize("Paste"), 0, &Label))
 		{
@@ -779,7 +778,7 @@ void CMenus::RenderSettingsGraphics(CUIRect MainView)
 	}
 	
 	MainView.HSplitTop(20.0f, &Button, &MainView);
-	if(DoButton_CheckBox(&g_Config.m_GfxThreaded, Localize("Threaded rendering"), g_Config.m_GfxThreaded, &Button))
+	if(DoButton_CheckBox(&g_Config.m_GfxThreaded, Localize("Threaded rendering (no shaders)"), g_Config.m_GfxThreaded, &Button))
 	{
 		g_Config.m_GfxThreaded ^= 1;
 		CheckSettings = true;
@@ -814,10 +813,10 @@ void CMenus::RenderSettingsGraphics(CUIRect MainView)
 	if(DoButton_CheckBox(&g_Config.m_GfxHighDetail, Localize("High Detail"), g_Config.m_GfxHighDetail, &Button))
 		g_Config.m_GfxHighDetail ^= 1;
 
-	// check if the new settings require a restart
-	if(CheckSettings)
+	bool CanApply = false;
+	if (m_NeedRestartGraphics == true)
 	{
-		if(s_GfxScreenWidth == g_Config.m_GfxScreenWidth &&
+		if (s_GfxScreenWidth == g_Config.m_GfxScreenWidth &&
 			s_GfxScreenHeight == g_Config.m_GfxScreenHeight &&
 			s_GfxColorDepth == g_Config.m_GfxColorDepth &&
 			s_GfxBorderless == g_Config.m_GfxBorderless &&
@@ -825,11 +824,10 @@ void CMenus::RenderSettingsGraphics(CUIRect MainView)
 			s_GfxVsync == g_Config.m_GfxVsync &&
 			s_GfxFsaaSamples == g_Config.m_GfxFsaaSamples &&
 			s_GfxTextureQuality == g_Config.m_GfxTextureQuality &&
-			s_GfxTextureCompression == g_Config.m_GfxTextureCompression &&
-			s_GfxThreaded == g_Config.m_GfxThreaded)
-			m_NeedRestartGraphics = false;
+			s_GfxTextureCompression == g_Config.m_GfxTextureCompression)
+			CanApply = false;
 		else
-			m_NeedRestartGraphics = true;
+			CanApply = true;
 	}
 
 	//
@@ -864,7 +862,7 @@ void CMenus::RenderSettingsGraphics(CUIRect MainView)
 	MainView.HSplitTop(20.0f, 0, &MainView);
 	MainView.HSplitTop(20.0f, &Button, &MainView);
 	static int s_ApplyButton = -1;
-	if(DoButton_Menu(&s_ApplyButton, Localize("Apply"), m_NeedRestartGraphics?0:-1, &Button))
+	if(DoButton_Menu(&s_ApplyButton, Localize("Apply"), ( m_NeedRestartGraphics && CanApply )?0:-1, &Button))
 	{
 		s_GfxScreenWidth = g_Config.m_GfxScreenWidth;
 		s_GfxScreenHeight = g_Config.m_GfxScreenHeight;
@@ -875,7 +873,7 @@ void CMenus::RenderSettingsGraphics(CUIRect MainView)
 		s_GfxFsaaSamples = g_Config.m_GfxFsaaSamples;
 		s_GfxTextureQuality = g_Config.m_GfxTextureQuality;
 		s_GfxTextureCompression = g_Config.m_GfxTextureCompression;
-		s_GfxThreaded = g_Config.m_GfxThreaded;
+		//s_GfxThreaded = g_Config.m_GfxThreaded;
 
 		Client()->ReinitWindow();
 
@@ -888,9 +886,28 @@ void CMenus::RenderSettingsGraphics(CUIRect MainView)
 		g_Config.m_GfxFsaaSamples = s_GfxFsaaSamples;
 		g_Config.m_GfxTextureQuality = s_GfxTextureQuality;
 		g_Config.m_GfxTextureCompression = s_GfxTextureCompression;
-		g_Config.m_GfxThreaded = s_GfxThreaded;
+		//g_Config.m_GfxThreaded = s_GfxThreaded;
 
-		m_NeedRestartGraphics = false;
+		CheckSettings = true;
+	}
+
+
+	// check if the new settings require a restart
+	if (CheckSettings)
+	{
+		if (s_GfxScreenWidth == g_Config.m_GfxScreenWidth &&
+			s_GfxScreenHeight == g_Config.m_GfxScreenHeight &&
+			s_GfxColorDepth == g_Config.m_GfxColorDepth &&
+			s_GfxBorderless == g_Config.m_GfxBorderless &&
+			s_GfxFullscreen == g_Config.m_GfxFullscreen &&
+			s_GfxVsync == g_Config.m_GfxVsync &&
+			s_GfxFsaaSamples == g_Config.m_GfxFsaaSamples &&
+			s_GfxTextureQuality == g_Config.m_GfxTextureQuality &&
+			s_GfxTextureCompression == g_Config.m_GfxTextureCompression &&
+			s_GfxThreaded == g_Config.m_GfxThreaded)
+			m_NeedRestartGraphics = false;
+		else
+			m_NeedRestartGraphics = true;
 	}
 }
 

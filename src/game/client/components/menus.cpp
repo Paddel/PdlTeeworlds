@@ -1,6 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include <math.h>
+
 
 #include <base/system.h>
 #include <base/math.h>
@@ -50,7 +48,7 @@ static char *m_aMainButtonText[] = { "Play", "Extras", "Demos", "Editor", "Setti
 static char CircleChar[] = { -30, -100, -109 };
 
 static int gs_TextureBlob = -1;
-static int gs_TextureBack = -1;
+static int gs_TextureBackInv = -1;
 static int gs_TextureSpark = -1;
 static int gs_TextureAurora = -1;
 static int gs_TextureMainButton = -1;
@@ -782,7 +780,7 @@ int CMenus::RenderMenubar(CUIRect r)
 
 bool CMenus::Grow(float *pSrc, float To, float Speed)
 {
-	float Dist = (float)fabs(*pSrc - To);
+	float Dist = (float)fabsolute(*pSrc - To);
 	if (Dist >= Speed*0.03f)
 	{
 		*pSrc += (Dist*Speed) * (To > *pSrc ? 1 : -1);
@@ -801,6 +799,12 @@ void CMenus::RenderLoading()
 
 	static int64 LastLoadRender = 0;
 	float Percent = m_LoadCurrent++/(float)m_LoadTotal;
+	/*static float a = 0.0f;
+	a += 0.001f;
+	if (a >= 1.0f)
+		a = 0.0f;
+	float Percent = a;*/
+
 	//static float Percent = 0;
 	//Grow(&Percent, PercentStatic, 0.05);
 
@@ -824,38 +828,95 @@ void CMenus::RenderLoading()
 
 	Graphics()->BlendNormal();
 
-	
-	if(gs_TexturePaddel == -1)
-		gs_TexturePaddel = Graphics()->LoadTexture("pdl_Paddel.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
-
 	CUIRect AvatarRect; AvatarRect.x = Screen.w*0.5f-s_PaddelSize*0.5f; AvatarRect.y = Screen.h*0.5f-s_PaddelSize*0.5f; AvatarRect.w = s_PaddelSize; AvatarRect.h = s_PaddelSize;
 
-	CUIRect ClipRect = AvatarRect;
-	ClipRect.x += ClipRect.w*Percent;
-	ClipRect.w -= ClipRect.w*Percent;
-	UI()->ClipEnable(&ClipRect);
+	/*if (Graphics()->UseShader())
+	{
+		float aVar[4];
+		Graphics()->FrameBufferBegin(IGraphics::FBO_LOADGREY);
 
-	Graphics()->TextureSet(gs_TexturePaddel);
-	Graphics()->QuadsBegin();
+		Graphics()->ShaderBegin(IGraphics::SHADER_LOADGREY);
 
-	Graphics()->SetColor(0.5f, 0.5f, 0.5f, 1.0f);
-	IGraphics::CQuadItem QuadItem(AvatarRect.x, AvatarRect.y, AvatarRect.w, AvatarRect.h);
-	Graphics()->QuadsDrawTL(&QuadItem, 1);
-	Graphics()->QuadsEnd();
-	UI()->ClipDisable();
+		aVar[0] = Graphics()->ScreenWidth();
+		aVar[1] = Graphics()->ScreenHeight();
+		Graphics()->ShaderUniformSet("u_Resolution", aVar, 2);
 
-	ClipRect = AvatarRect;
-	ClipRect.w *= Percent;
-	UI()->ClipEnable(&ClipRect);
+		aVar[0] = Percent;
+		Graphics()->ShaderUniformSet("u_Percent", aVar, 1);
 
-	Graphics()->TextureSet(gs_TexturePaddel);
-	Graphics()->QuadsBegin();
+		aVar[0] = Graphics()->ScreenHeight();
+		Graphics()->ShaderUniformSet("u_Radius", aVar, 1);
 
-	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-	QuadItem = IGraphics::CQuadItem(AvatarRect.x, AvatarRect.y, AvatarRect.w, AvatarRect.h);
-	Graphics()->QuadsDrawTL(&QuadItem, 1);
-	Graphics()->QuadsEnd();
-	UI()->ClipDisable();
+		Graphics()->TextureSet(-1);
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+		Graphics()->QuadsDrawTL(&IGraphics::CQuadItem(0, 0, Screen.w, Screen.h), 1);
+		Graphics()->QuadsEnd();
+
+		Graphics()->TextureSet(gs_TexturePaddel);
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+		IGraphics::CQuadItem QuadItem = IGraphics::CQuadItem(0, 0, 10, 10);
+		Graphics()->QuadsDrawTL(&QuadItem, 1);
+		Graphics()->QuadsEnd();
+
+		Graphics()->TextureSet(-1);
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+		Graphics()->QuadsDrawTL(&IGraphics::CQuadItem(0, 0, Screen.w, Screen.h), 1);
+		Graphics()->QuadsEnd();
+
+		Graphics()->TextureSet(-1);
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+		Graphics()->QuadsDrawTL(&IGraphics::CQuadItem(0, 0, Screen.w, Screen.h), 1);
+		Graphics()->QuadsEnd();
+
+		Graphics()->FrameBufferEnd();
+		Graphics()->ShaderEnd();
+	}
+	else*/
+	{
+		float SPercent = Percent * 0.91f;
+		CUIRect ClipRect = AvatarRect;
+		ClipRect.x += ClipRect.w*SPercent;
+		ClipRect.w -= ClipRect.w*SPercent;
+		UI()->ClipEnable(&ClipRect);
+
+		Graphics()->TextureSet(gs_TexturePaddel);
+		Graphics()->QuadsBegin();
+
+		Graphics()->SetColor(0.5f, 0.5f, 0.5f, 1.0f);
+		IGraphics::CQuadItem QuadItem(AvatarRect.x, AvatarRect.y, AvatarRect.w, AvatarRect.h);
+		Graphics()->QuadsDrawTL(&QuadItem, 1);
+		Graphics()->QuadsEnd();
+		UI()->ClipDisable();
+
+		ClipRect = AvatarRect;
+		ClipRect.w *= SPercent;
+		UI()->ClipEnable(&ClipRect);
+
+		Graphics()->TextureSet(gs_TexturePaddel);
+		Graphics()->QuadsBegin();
+
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+		QuadItem = IGraphics::CQuadItem(AvatarRect.x, AvatarRect.y, AvatarRect.w, AvatarRect.h);
+		Graphics()->QuadsDrawTL(&QuadItem, 1);
+		Graphics()->QuadsEnd();
+		UI()->ClipDisable();
+
+		Graphics()->TextureSet(m_TextureButton);
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.7f);
+		Graphics()->QuadsSetRotation(pi * 0.5f);
+		static const float Height = 18.0f;
+		QuadItem = IGraphics::CQuadItem(AvatarRect.x + AvatarRect.w * SPercent - (AvatarRect.w - Height) * 0.5f, AvatarRect.y + AvatarRect.w * 0.5f, AvatarRect.w, Height);
+		Graphics()->QuadsDrawTL(&QuadItem, 1);
+		Graphics()->QuadsSetRotation(pi * 1.5f);
+		QuadItem = IGraphics::CQuadItem(AvatarRect.x + AvatarRect.w * SPercent - (AvatarRect.w + Height - 2.0f) * 0.5f, AvatarRect.y + AvatarRect.w * 0.5f, AvatarRect.w, Height);
+		Graphics()->QuadsDrawTL(&QuadItem, 1);
+		Graphics()->QuadsEnd();
+	}
 
 	Graphics()->Swap();
 }
@@ -863,7 +924,7 @@ void CMenus::RenderLoading()
 void CMenus::InitTextures()
 {
 	gs_TextureBlob = Graphics()->LoadTexture("blob.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
-	gs_TextureBack = Graphics()->LoadTexture("pdl_background.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
+	gs_TextureBackInv = Graphics()->LoadTexture("pdl_background_inv.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
 	gs_TextureSpark = Graphics()->LoadTexture("pdl_spark.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
 	gs_TextureAurora = Graphics()->LoadTexture("pdl_aurora.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
 	gs_TextureMainButton = Graphics()->LoadTexture("pdl_mainbutton.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
@@ -1536,25 +1597,25 @@ void CMenus::JoystickInput(int *pButtons)
 	float MouseAxeSX = Input()->JoystickAxes(5);
 	float MouseAxeSY = Input()->JoystickAxes(4);
 
-	if(fabs(MouseAxeX) > 0.2f)
+	if(fabsolute(MouseAxeX) > 0.2f)
 	{
 		m_MousePos.x += MouseAxeX*5.5f;
 		m_LastInput = time_get();
 	}
 
-	if(fabs(MouseAxeY) > 0.2f)
+	if(fabsolute(MouseAxeY) > 0.2f)
 	{
 		m_MousePos.y += MouseAxeY*5.5f;
 		m_LastInput = time_get();
 	}
 
-	if(fabs(MouseAxeSX) > 0.2f)
+	if(fabsolute(MouseAxeSX) > 0.2f)
 	{
 		m_MousePos.x += MouseAxeSX;
 		m_LastInput = time_get();
 	}
 
-	if(fabs(MouseAxeSY) > 0.2f)
+	if(fabsolute(MouseAxeSY) > 0.2f)
 	{
 		m_MousePos.y += MouseAxeSY;
 		m_LastInput = time_get();
@@ -1834,14 +1895,15 @@ void CMenus::OnRender()
 
 void CMenus::InitMainButtons()
 {
-	DoMainButtons();
+	DoMainButtons(true);
 
 	for(int i = 0; i < NUM_MAINBUTTONS; i++)
 		m_aMainButtons[i].m_Pos = m_aMainButtons[i].m_WantedPos;
 }
 
-void CMenus::DoMainButtons()
+void CMenus::DoMainButtons(bool Init)
 {
+
 	CUIRect Screen = *UI()->Screen();
 	float sw = Screen.w;
 	float sh = Screen.h;
@@ -1883,7 +1945,7 @@ void CMenus::DoMainButtons()
 			m_aMainButtons[i].m_Scale = 1.0f;
 
 			float t = Client()->LocalTime();
-			m_aMainButtons[i].m_WantedPos += vec2(sinf(t+0.7f*i), cosf(t+0.7f*i))*2.0f;
+			m_aMainButtons[i].m_WantedPos += vec2(sinusf(t+0.7f*i), cosinusf(t+0.7f*i))*2.0f;
 
 			if(m_Popup == POPUP_NONE)
 			{
@@ -1904,6 +1966,9 @@ void CMenus::DoMainButtons()
 			m_aMainButtons[i].m_Scale = 1.0f;
 		}
 	}
+
+	if (Init == true)
+		return;
 
 	Graphics()->TextureSet(gs_TextureMainButton);
 	Graphics()->QuadsBegin();
@@ -1951,32 +2016,32 @@ void CMenus::DoMainButtons()
 
 	CUIRect Text;
 	TextRender()->Bubble();
+	TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.82f);
 	for(int i = 0; i < NUM_MAINBUTTONS; i++)
 	{
 		int ScaleSizeH = ButtonH*m_aMainButtons[i].m_Scale-ButtonH;
 		Text.x = m_aMainButtons[i].m_Pos.x; Text.y = m_aMainButtons[i].m_Pos.y + (ButtonH*0.5f-(32.0f+ScaleSizeH)*0.5f); Text.w = ButtonW; Text.h = ButtonH;
-		UI()->DoLabel(&Text, m_aMainButtonText[i], 32.0f+ScaleSizeH, 0);
+		UI()->DoLabel(&Text, Localize(m_aMainButtonText[i]), 28.0f+ScaleSizeH, 0);
 
 		Text.y = m_aMainButtons[i].m_Pos.y;
 		if(UI()->DoButtonLogic(&m_aMainButtons[i].m_ButtonID, "", 0, &Text) && m_Popup == POPUP_NONE)
 		{
 			switch(i)
 			{
-			case MAINBUTTON_PLAY:
-				{
-					ServerBrowser()->Refresh(IServerBrowser::TYPE_INTERNET);
-					g_Config.m_UiPage = PAGE_INTERNET;
-				} break;
-
+			case MAINBUTTON_PLAY: g_Config.m_UiPage = PAGE_INTERNET; break;
 			case MAINBUTTON_EXTRAS: g_Config.m_UiPage = PAGE_EXTRAS; break;
 			case MAINBUTTON_DEMOS: g_Config.m_UiPage = PAGE_DEMOS; break;
 			case MAINBUTTON_EDITOR: g_Config.m_ClEditor = 1; break;
 			case MAINBUTTON_SETTINGS: g_Config.m_UiPage = PAGE_SETTINGS; break;
 			case MAINBUTTON_QUIT: m_Popup = POPUP_QUIT; break;
 			}
+
+			if(i == MAINBUTTON_PLAY)
+				ServerBrowser()->Refresh(IServerBrowser::TYPE_INTERNET);
 		}
 	}
 	TextRender()->Bubble();
+	TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
 void CMenus::InitPaddel()
@@ -2005,7 +2070,7 @@ void CMenus::DoPaddel()
 
 		if(m_AnimationState > SPRITE_PADDEL_9)
 		{
-			float NextAnim = rand()%20/20.0f+2.0f;
+			float NextAnim = random()%20/20.0f+2.0f;
 			m_AnimationState = SPRITE_PADDEL_1-1;
 			m_AnimationTime = time_get() + time_freq()*NextAnim; 
 		}
@@ -2054,7 +2119,7 @@ void CMenus::DoPaddel()
 	else if(g_Config.m_UiPage == PAGE_PADDEL && Client()->State() == IClient::STATE_OFFLINE)
 	{
 		m_PaddelWantedPos = vec2(sw*0.5f, sh*0.5f);
-		m_PaddelWantedSize = 129+sinf(Client()->LocalTime()*2.5f)*4.0f;
+		m_PaddelWantedSize = 129+sinusf(Client()->LocalTime()*2.5f)*4.0f;
 		m_PaddelRotation = 0.0f;
 		m_PaddelVisible = true;
 
@@ -2075,7 +2140,7 @@ void CMenus::DoPaddel()
 	{
 		m_PaddelWantedPos = vec2(sw*0.5f+128.0f, sh*0.5f);
 		m_PaddelWantedSize = 128.0f;
-		m_PaddelRotation = sinf(time_get()/(time_freq()*0.25f))*0.03f;
+		m_PaddelRotation = sinusf(time_get()/(time_freq()*0.25f))*0.03f;
 		m_PaddelVisible = true;
 
 		if(m_LastInput + time_freq() * 15.0f < time_get())
@@ -2151,8 +2216,6 @@ void CMenus::RenderBackground()
 void CMenus::RenderBackgroundPaddel()
 {
 	CUIRect Screen = *UI()->Screen();
-	if(gs_TextureBack == -1)
-		gs_TextureBack = Graphics()->LoadTexture("background.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
 
 	int MouseOffset = 1;
 	vec2 MouseFromMidFac = vec2(UI()->MouseX()/Screen.w*2.0f-1.0f, UI()->MouseY()/Screen.h*2.0f-1.0f);
@@ -2161,15 +2224,69 @@ void CMenus::RenderBackgroundPaddel()
 	float sh = 300;
 	Graphics()->MapScreen(0, 0, sw, sh);
 
-	// render border fade
-	Graphics()->TextureSet(gs_TextureBack);
+	bool RenderRipple = Graphics()->UseShader() && (g_Config.m_PdlBackgroundRipple == 1);
+
+	if(RenderRipple)
+	{
+		float aVar[4];
+		Graphics()->FrameBufferBegin(IGraphics::FBO_RIPPLE);
+
+		Graphics()->ShaderBegin(IGraphics::SHADER_RIPPLE);
+
+		aVar[0] = Graphics()->ScreenWidth();
+		aVar[1] = Graphics()->ScreenHeight();
+		Graphics()->ShaderUniformSet("u_Resolution", aVar, 2);
+
+		static float s_Move;
+		s_Move += 0.005f;
+		aVar[0] = s_Move;
+		Graphics()->ShaderUniformSet("u_Time", aVar, 1);
+	}
+
+	Graphics()->TextureSet(gs_TextureBackInv);
 	Graphics()->QuadsBegin();
-		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-		Graphics()->QuadsDrawTL(&IGraphics::CQuadItem(MouseFromMidFac.x*MouseOffset-MouseOffset, MouseFromMidFac.y*MouseOffset-MouseOffset, sw+MouseOffset*2, sh+MouseOffset*2), 1);
+	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+	if(RenderRipple)
+		Graphics()->QuadsDrawTL(&IGraphics::CQuadItem(0, 0, sw, sh), 1);
+	else
+	{
+		const float qx = MouseFromMidFac.x*MouseOffset - MouseOffset, qy = MouseFromMidFac.y*MouseOffset - MouseOffset, qw = sw + MouseOffset * 2, qh = sh + MouseOffset * 2;
+		Graphics()->QuadsDrawTL(&IGraphics::CQuadItem(qx, qy + qh, qw, -qh), 1);
+	}
 	Graphics()->QuadsEnd();
 
+	if (RenderRipple)
+	{
+		Graphics()->FrameBufferEnd();
+		Graphics()->ShaderEnd();
+	}
+
 	RenderSparks();
-	RenderSunrays();
+
+	if (Graphics()->UseShader() && g_Config.m_PdlBackgroundRays)
+	{
+		float aVar[4];
+		Graphics()->ShaderBegin(IGraphics::SHADER_RAYS);
+
+		aVar[0] = Graphics()->ScreenWidth();
+		aVar[1] = Graphics()->ScreenHeight();
+		Graphics()->ShaderUniformSet("u_Resolution", aVar, 2);
+
+		static float s_Move;
+		s_Move += 0.005f;
+		aVar[0] = s_Move;
+		Graphics()->ShaderUniformSet("u_Time", aVar, 1);
+
+		Graphics()->TextureSet(-1);
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(0.0f, 0.0f, 0.0f, 1.0f);
+		Graphics()->QuadsDrawTL(&IGraphics::CQuadItem(0, 0, sw, sh), 1);
+		Graphics()->QuadsEnd();
+
+		Graphics()->ShaderEnd();
+	}
+	else
+		RenderSunrays();
 
 	// restore screen
 	Graphics()->MapScreen(Screen.x, Screen.y, Screen.w, Screen.h);
@@ -2202,7 +2319,7 @@ void CMenus::RenderBackgroundStandart()
 	Graphics()->TextureSet(-1);
 	Graphics()->QuadsBegin();
 		float Size = 15.0f;
-		float OffsetTime = fmod(Client()->LocalTime()*0.15f, 2.0f);
+		float OffsetTime = fmodulu(Client()->LocalTime()*0.15f, 2.0f);
 		for(int y = -2; y < (int)(sw/Size); y++)
 			for(int x = -2; x < (int)(sh/Size); x++)
 			{
@@ -2298,23 +2415,26 @@ void CMenus::RenderSparks()
 	{
 		if(pSparks[i])
 		{
-			if(!pSparks[i]->Tick())
-				pSparks[i] = NULL;
+			if (!pSparks[i]->Tick())
+			{
+				delete pSparks[i];
+				pSparks[i] = 0x0;
+			}
 		}
 		else
 		{
 			/*float mx = (m_MousePos.x/(float)Graphics()->ScreenWidth())*300*Graphics()->ScreenAspect();
 			float my = (m_MousePos.y/(float)Graphics()->ScreenHeight())*300;*/
 
-			int LifeTime = (rand()%500)+500;//20 <-> 69
+			int LifeTime = (random()%500)+500;//20 <-> 69
 			//vec2 Pos = vec2(mx, my);//vec2(0, 310);
-			vec2 Pos = vec2(rand()%(int)(300*Graphics()->ScreenAspect()), rand()%300);
-			vec2 Dir = vec2((rand()%21/10.0f)-1.0f, (rand()%21/10.0f)-1.0f);
-			float Speed = (rand()%2)/10.0f+0.01f;//1.1 <-> 4.1
-			int Size = (rand()%6)+2;//8 <-> 15
+			vec2 Pos = vec2(random()%(int)(300*Graphics()->ScreenAspect()), random()%300);
+			vec2 Dir = vec2((random()%21/10.0f)-1.0f, (random()%21/10.0f)-1.0f);
+			float Speed = (random()%2)/10.0f+0.01f;//1.1 <-> 4.1
+			int Size = (random()%6)+2;//8 <-> 15
 
 			vec3 Color;
-			switch(rand()%4)
+			switch(random()%4)
 			{
 				case 0: Color = vec3(164/255.0f, 238/255.0f, 219/255.0f); break;
 				case 1: Color = vec3(117/255.0f, 117/255.0f, 53/255.0f); break;
@@ -2343,16 +2463,16 @@ void CMenus::RenderSunrays()
 		if(pSunrays[i])
 		{
 			if(!pSunrays[i]->Tick())
-				pSunrays[i] = NULL;
+				pSunrays[i] = 0x0;
 		}
 		else
 		{
-			int LifeTime = (rand()%500)+500;//20 <-> 69
+			int LifeTime = (random()%500)+500;//20 <-> 69
 			//vec2 Pos = vec2(mx, my);//vec2(0, 310);
-			vec2 Pos = vec2(rand()%(int)(300*Graphics()->ScreenAspect()), rand()%300);
-			vec2 Dir = vec2(rand()%2?-1:1, 0);
-			float Speed = (rand()%20)/700.0f+0.005f;//1.1 <-> 4.1
-			//int Size = (rand()%6)+2;//8 <-> 15
+			vec2 Pos = vec2(random()%(int)(300*Graphics()->ScreenAspect()), random()%300);
+			vec2 Dir = vec2(random()%2?-1:1, 0);
+			float Speed = (random()%20)/700.0f+0.005f;//1.1 <-> 4.1
+			//int Size = (random()%6)+2;//8 <-> 15
 
 			pSunrays[i] = new CBackTile(this, LifeTime, Pos, Dir, Speed, 32, 64, vec3(1.0f, 1.0f, 1.0f));
 		}

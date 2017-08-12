@@ -16,7 +16,7 @@ CAutoRun::CAutoRun()
 {
 	m_MapWidth = 0;
 	m_MapHeight = 0;
-	m_pTiles = 0;
+	m_pTiles = 0x0;
 	m_DrawMode = 1;
 }
 
@@ -33,8 +33,11 @@ void CAutoRun::OnInit()
 
 void CAutoRun::OnMapLoad()
 {
-	if(Layers()->GameLayer() == NULL)
+	if(Layers()->GameLayer() == 0x0)
 		return;
+
+	if (m_pTiles != 0x0)
+		delete[] m_pTiles;
 
 	m_MapWidth = Layers()->GameLayer()->m_Width;
 	m_MapHeight = Layers()->GameLayer()->m_Height;
@@ -68,10 +71,10 @@ void CAutoRun::OnRender()
 	Graphics()->BlendNone();
 	vec4 Color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	RenderTools()->RenderTilemap(m_pTiles, m_MapWidth, m_MapHeight, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
-									NULL, this, -1, 0);
+									0x0, this, -1, 0);
 	Graphics()->BlendNormal();
 	RenderTools()->RenderTilemap(m_pTiles, m_MapWidth, m_MapHeight, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_TRANSPARENT,
-									NULL, this, -1, 0);
+									0x0, this, -1, 0);
 
 	Graphics()->MapScreen(Screen.x, Screen.y, Screen.w, Screen.h);
 }
@@ -122,8 +125,8 @@ bool CAutoRun::OnInput(IInput::CEvent e)
 		{
 			vec2 MousePosWorld = m_pClient->m_pControls->m_TargetPos;
 
-			int Nx = clamp(int(round(MousePosWorld.x)/32), 0, m_MapWidth-1);
-			int Ny = clamp(int(round(MousePosWorld.y)/32), 0, m_MapHeight-1);
+			int Nx = clamp(int(round_to_int(MousePosWorld.x)/32), 0, m_MapWidth-1);
+			int Ny = clamp(int(round_to_int(MousePosWorld.y)/32), 0, m_MapHeight-1);
 			int Tile = Ny*m_MapWidth+Nx;
 
 			m_pTiles[Tile].m_Index = m_DrawMode;
@@ -282,7 +285,7 @@ void CAutoRun::SnapInput(CNetObj_PlayerInput *pInput, int ClientID, int DummyID)
 		vec2 EnemyPos;
 		vec2 EnemyVel;
 		CGameClient::CSnapState::CCharacterInfo EnemyChar;
-		const void *pInfo = NULL;
+		const void *pInfo = 0x0;
 
 		if(!m_pClient->m_Snap.m_aCharacters[i].m_Active || i == LocalID)
 			continue;
@@ -300,7 +303,7 @@ void CAutoRun::SnapInput(CNetObj_PlayerInput *pInput, int ClientID, int DummyID)
 		if(distance(EnemyPos, LocalPos) > 360)
 			continue;
 
-		if(Collision()->IntersectLine(EnemyPos, LocalPos, NULL, NULL))
+		if(Collision()->IntersectLine(EnemyPos, LocalPos, 0x0, 0x0))
 			continue;
 
 		vec2 HookPos = EnemyPos-LocalPos;
@@ -318,8 +321,8 @@ void CAutoRun::SnapInput(CNetObj_PlayerInput *pInput, int ClientID, int DummyID)
 
 int CAutoRun::GetIndex(vec2 Pos)
 {
-	int Nx = clamp(int(round(Pos.x)/32), 0, m_MapWidth-1);
-	int Ny = clamp(int(round(Pos.y)/32), 0, m_MapHeight-1);
+	int Nx = clamp(int(round_to_int(Pos.x)/32), 0, m_MapWidth-1);
+	int Ny = clamp(int(round_to_int(Pos.y)/32), 0, m_MapHeight-1);
 	int Tile = Ny*m_MapWidth+Nx;
 	return m_pTiles[Tile].m_Index;
 }
@@ -337,7 +340,7 @@ void CAutoRun::ConMapSave(IConsole::IResult *pResult, void *pUserData)
 	{
 		for(int i = 0; i < pThis->MapWidth()*pThis->MapHeight(); i++)
 		{
-			itoa(pThis->MapTiles()[i].m_Index, aBuf, 10);
+			str_format(aBuf, sizeof(aBuf), "%i", pThis->MapTiles()[i].m_Index);
 			io_write(File, aBuf, 1);
 		}
 		io_close(File);
@@ -378,7 +381,7 @@ void CAutoRun::ConMapLoad(IConsole::IResult *pResult, void *pUserData)
 
 			char IndexChar[3];
 			str_format(IndexChar, sizeof(IndexChar), "%c", (char *)pLine[i]);
-			int Index = atoi(IndexChar);
+			int Index = str_toint(IndexChar);
 			pTiles[Tile].m_Index = Index;
 			Tile++;
 		}

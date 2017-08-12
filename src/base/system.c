@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -248,6 +247,11 @@ void mem_copy(void *dest, const void *source, unsigned size)
 void mem_move(void *dest, const void *source, unsigned size)
 {
 	memmove(dest, source, size);
+}
+
+void mem_set(void *block, unsigned size, int value)
+{
+	memset(block, value, size);
 }
 
 void mem_zero(void *block,unsigned size)
@@ -1538,9 +1542,39 @@ int net_socket_read_wait(NETSOCKET sock, int time)
 	return 0;
 }
 
-int time_timestamp()
+int64 time_timestamp()
 {
 	return time(0);
+}
+
+int time_year(int64 ts)
+{
+	return localtime(&ts)->tm_year + 1900;
+}
+
+int time_month(int64 ts)
+{
+	return localtime(&ts)->tm_mon + 1;
+}
+
+int time_day(int64 ts)
+{
+	return localtime(&ts)->tm_mday;
+}
+
+int time_hour(int64 ts)
+{
+	return localtime(&ts)->tm_hour;
+}
+
+int time_minute(int64 ts)
+{
+	return localtime(&ts)->tm_min;
+}
+
+int time_second(int64 ts)
+{
+	return localtime(&ts)->tm_sec;
 }
 
 void str_append(char *dst, const char *src, int dst_size)
@@ -1563,6 +1597,19 @@ void str_copy(char *dst, const char *src, int dst_size)
 {
 	strncpy(dst, src, dst_size);
 	dst[dst_size-1] = 0; /* assure null termination */
+}
+
+int _str_scan(const char ** str, int *length, const char * format, ...)
+{
+	int rv;
+	va_list args;
+
+	va_start(args, format);
+	rv = vsscanf(*str, format, args);
+	va_end(args);
+	*str += *length;
+
+	return rv;
 }
 
 int str_length(const char *str)
@@ -2054,7 +2101,7 @@ void console_show()
 #endif
 }
 
-char *ClipboardGet()
+char *clipboard_get()
 {
 #ifdef CONF_FAMILY_WINDOWS
 	HANDLE hData;
@@ -2076,7 +2123,7 @@ char *ClipboardGet()
 #endif
 }
 
-void ClipboardSet(const char *pStr, int Size)
+void clipboard_set(const char *pStr, int Size)
 {
 #ifdef CONF_FAMILY_WINDOWS
 	HGLOBAL hGlobal;
@@ -2101,6 +2148,29 @@ void ClipboardSet(const char *pStr, int Size)
 #endif
 }
 
+void random_timeseet()
+{
+	srand(time(0));
+}
+
+int random()
+{
+	return rand();
+}
+const int rand_max()
+{
+	return RAND_MAX;
+}
+
+float frandom()
+{
+	return random() / (float)(rand_max());
+}
+
+void sort_quick(void* base, size_t num, size_t size, int(*compar)(const void*, const void*))
+{
+	qsort(base, num, size, compar);
+}
 
 #if defined(__cplusplus)
 }

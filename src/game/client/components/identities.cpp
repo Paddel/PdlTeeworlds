@@ -1,6 +1,4 @@
 
-#include <sstream>
-
 #include <base/stringseperation.h>
 #include <engine/shared/config.h>
 
@@ -50,36 +48,36 @@ void CIdentities::SavePlayerItem(int ClientID)
 	mem_zero(&aQuery, sizeof(aQuery));
 	str_format(aQuery, sizeof(aQuery), "REPLACE INTO %s.%s(name, clan, country, skin, costumcolor, color_body, color_feet, latency) VALUES (", SCHEMA_NAME, TABLE_NAME);
 	AddQueryStr(aQuery, m_aPlayerItems[ClientID].m_Info.m_aName, sizeof(aQuery));
-	strcat(aQuery, ", ");
+	str_append(aQuery, ", ", sizeof(aQuery));
 	AddQueryStr(aQuery, m_aPlayerItems[ClientID].m_Info.m_aClan, sizeof(aQuery));
-	strcat(aQuery, ", ");
+	str_append(aQuery, ", ", sizeof(aQuery));
 	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Info.m_Country, sizeof(aQuery));
-	strcat(aQuery, ", ");
+	str_append(aQuery, ", ", sizeof(aQuery));
 	AddQueryStr(aQuery, m_aPlayerItems[ClientID].m_Info.m_aSkin, sizeof(aQuery));
-	strcat(aQuery, ", ");
+	str_append(aQuery, ", ", sizeof(aQuery));
 	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Info.m_UseCustomColor, sizeof(aQuery));
-	strcat(aQuery, ", ");
+	str_append(aQuery, ", ", sizeof(aQuery));
 	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Info.m_ColorBody, sizeof(aQuery));
-	strcat(aQuery, ", ");
+	str_append(aQuery, ", ", sizeof(aQuery));
 	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Info.m_ColorFeet, sizeof(aQuery));
-	strcat(aQuery, ", ");
+	str_append(aQuery, ", ", sizeof(aQuery));
 	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Latency, sizeof(aQuery));
-	strcat(aQuery, ");");
-	QueryThread(aQuery, NULL, NULL);
+	str_append(aQuery, ");", sizeof(aQuery));
+	QueryThread(aQuery, 0x0, 0x0);
 }
 
-void CIdentities::ResultRandomPlayerInfo(int Index, char *pResult, int pResultSize, void *pData)
+void CIdentities::ResultRandomPlayerInfo(int Index, char *pResult, int pResultSize, void *pData, int Row, int MaxRows)
 {
 	IGameClient::CPlayerInfo *pInfo = (IGameClient::CPlayerInfo *)pData;
 	switch (Index)
 	{
 	case 0: str_copy(pInfo->m_aName, pResult, sizeof(pInfo->m_aName)); break;
 	case 1: str_copy(pInfo->m_aClan, pResult, sizeof(pInfo->m_aClan)); break;
-	case 2: pInfo->m_Country = atoi(pResult); break;
+	case 2: pInfo->m_Country = str_toint(pResult); break;
 	case 3: str_copy(pInfo->m_aSkin, pResult, sizeof(pInfo->m_aSkin)); break;
-	case 4: pInfo->m_UseCustomColor = atoi(pResult); break;
-	case 5: pInfo->m_ColorBody = atoi(pResult); break;
-	case 6: pInfo->m_ColorFeet = atoi(pResult); break;
+	case 4: pInfo->m_UseCustomColor = str_toint(pResult); break;
+	case 5: pInfo->m_ColorBody = str_toint(pResult); break;
+	case 6: pInfo->m_ColorFeet = str_toint(pResult); break;
 	}
 }
 
@@ -114,7 +112,7 @@ void CIdentities::OnRender()
 
 		pInfo = Client()->SnapFindItem(IClient::SNAP_CURRENT, NETOBJTYPE_PLAYERINFO, i);
 
-		if (pInfo == NULL)
+		if (pInfo == 0x0)
 			continue;
 
 		const CNetObj_PlayerInfo *pPlayerInfo = (const CNetObj_PlayerInfo *)pInfo;
@@ -140,7 +138,7 @@ void CIdentities::OnRender()
 				continue;
 		}
 
-		if(pPlayerInfo->m_Latency == 0)
+		if(pPlayerInfo->m_Latency <= 0)
 			continue;
 
 		//enough filter
@@ -153,7 +151,7 @@ void CIdentities::OnRender()
 	}
 }
 
-void CIdentities::GetMenuCountResult(int Index, char *pResult, int pResultSize, void *pData)
+void CIdentities::GetMenuCountResult(int Index, char *pResult, int pResultSize, void *pData, int Row, int MaxRows)
 {
 	int *pNum = (int *) pData;
 	*pNum = str_toint(pResult);
@@ -164,7 +162,7 @@ int CIdentities::GetMenuCount(char *pCondition)
 	int Result = 0;
 	char aQuery[QUERY_MAX_STR_LEN];
 	char aWhereCondition[256] = { };
-	if(pCondition[0] != NULL && str_find(pCondition, ";") == 0x0)
+	if(pCondition[0] != 0x0 && str_find(pCondition, ";") == 0x0)
 		str_format(aWhereCondition, sizeof(aWhereCondition), "%s", pCondition);
 	str_format(aQuery, sizeof(aQuery), "SELECT count(*) FROM %s.%s %s", SCHEMA_NAME, TABLE_NAME, aWhereCondition);
 	int res = Query(aQuery, &GetMenuCountResult, &Result);
@@ -175,11 +173,11 @@ void CIdentities::GetMenuIdentity(ResultFunction ResultFunc, void *pData, int Pa
 {
 	char aQuery[QUERY_MAX_STR_LEN];
 	char aWhereCondition[256] = { };
-	if(pCondition[0] != NULL && str_find(pCondition, ";") == 0x0)
+	if(pCondition[0] != 0x0 && str_find(pCondition, ";") == 0x0)
 		str_format(aWhereCondition, sizeof(aWhereCondition), "%s ", pCondition);
 
 	str_format(aQuery, sizeof(aQuery), "SELECT * FROM %s.%s %sLIMIT %i OFFSET %i", SCHEMA_NAME, TABLE_NAME, aWhereCondition, PageSize, Page);
-	Query(aQuery, ResultFunc, pData);
+	QueryThread(aQuery, ResultFunc, pData);
 }
 
 void CIdentities::SerializeIdentity(char *pDst, int DstSize, CPlayerItem &Identity)

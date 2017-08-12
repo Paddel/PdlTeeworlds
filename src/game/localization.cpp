@@ -1,12 +1,11 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 
-#include "localization.h"
+
 #include <base/tl/algorithm.h>
-
 #include <engine/shared/linereader.h>
 #include <engine/console.h>
 #include <engine/storage.h>
+
+#include "localization.h"
 
 const char *Localize(const char *pStr)
 {

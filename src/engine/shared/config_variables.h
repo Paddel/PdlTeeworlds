@@ -1,12 +1,10 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #ifndef ENGINE_SHARED_CONFIG_VARIABLES_H
 #define ENGINE_SHARED_CONFIG_VARIABLES_H
 #undef ENGINE_SHARED_CONFIG_VARIABLES_H // this file will be included several times
 
-// TODO: remove this
-#include "././game/variables.h"
-#include "././game/client/pdl_variables.h"
+#include <game/variables.h>
+#include <game/client/pdl_variables.h>
 
 
 MACRO_CONFIG_STR(PlayerName, player_name, 16, "nameless tee", CFGFLAG_SAVE|CFGFLAG_CLIENT, "Name of the player")

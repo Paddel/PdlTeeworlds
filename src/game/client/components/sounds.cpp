@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <engine/engine.h>
 #include <engine/sound.h>
 #include <engine/shared/config.h>
@@ -51,7 +50,7 @@ int CSounds::GetSampleId(int SetId)
 	int Id;
 	do
 	{
-		Id = rand() % pSet->m_NumSounds;
+		Id = random() % pSet->m_NumSounds;
 	}
 	while(Id == pSet->m_Last);
 	pSet->m_Last = Id;

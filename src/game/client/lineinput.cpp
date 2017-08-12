@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <engine/keys.h>
 #include <engine/shared/config.h>
 #include "lineinput.h"
@@ -46,7 +45,7 @@ bool CLineInput::Manipulate(IInput::CEvent e, char *pStr, int StrMaxSize, int St
 
 	if(Code == 22 && g_Config.m_PdlInputCopyPaste)
 	{//paste
-		char *pPasting = ClipboardGet();
+		char *pPasting = clipboard_get();
 		int PastinLength = str_length(pPasting);
 		for(int i = 0; i < PastinLength; i++)
 		{
@@ -67,7 +66,7 @@ bool CLineInput::Manipulate(IInput::CEvent e, char *pStr, int StrMaxSize, int St
 	}
 	else if(Code == 3 && g_Config.m_PdlInputCopyPaste)
 	{//copy
-		ClipboardSet(pStr, NumChars + 1);
+		clipboard_set(pStr, NumChars + 1);
 	}
 	// 127 is produced on Mac OS X and corresponds to the delete key
 	else if (!(Code >= 0 && Code < 32) && Code != 127)

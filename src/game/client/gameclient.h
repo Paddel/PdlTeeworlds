@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #ifndef GAME_CLIENT_GAMECLIENT_H
 #define GAME_CLIENT_GAMECLIENT_H
 
@@ -74,6 +73,7 @@ class CGameClient : public IGameClient, public CTextureUser
 	static void ConDummyinfoCostumColor(IConsole::IResult *pResult, void *pUserData);
 	static void ConDummyinfoColorBody(IConsole::IResult *pResult, void *pUserData);
 	static void ConDummyinfoColorFeet(IConsole::IResult *pResult, void *pUserData);
+	static void ConDatabaseReconnect(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
@@ -167,9 +167,6 @@ public:
 			CNetObj_Character m_Prev;
 			CNetObj_Character m_Cur;
 
-			vec2 m_BlockInfoPos;
-			bool m_WillBeBlocked;
-
 			// interpolated position
 			//vec2 m_Position;
 		};
@@ -251,10 +248,15 @@ public:
 	int m_ClockColor;
 	void DoClockStart();
 	void DoClockMode();
+	void HandleClockMode();
+	
+	void HandleShowAll();
+	void HandleResendInfo();
 
 	// hooks
 	virtual void OnConnected();
 	virtual void OnRender();
+	virtual void OnTick();
 	virtual void OnRelease();
 	virtual void OnInit();
 	virtual void OnConsoleInit();
@@ -312,6 +314,8 @@ public:
 	class CBlockHelp *m_pBlockHelp;
 	class CPlayerCollection *m_pPlayerCollection;
 	class CIdentities *m_pIdentities;
+	class CMapInker *m_pMapInker;
+	class CAddressAnalysis *m_pAddressAnalysis;
 };
 
 
@@ -338,6 +342,51 @@ inline vec3 HslToRgb(vec3 HSL)
 	}
 }
 
+inline vec3 RgbToHsl(vec3 RGB)
+{
+	vec3 Out;
+	float Min, Max, Delta;
+
+	Min = RGB.r < RGB.g ? RGB.r : RGB.g;
+	Min = Min  < RGB.b ? Min : RGB.b;
+
+	Max = RGB.r > RGB.g ? RGB.r : RGB.g;
+	Max = Max  > RGB.b ? Max : RGB.b;
+
+	Out.l = (Max + Min) / 2.0f;
+	Delta = Max - Min;
+	if (Delta < 0.00001f)
+	{
+		Out.h = 0.5f * Max;
+		Out.s = 1.0f;
+		Out.l = Max;
+		return Out;
+	}
+	if (Max > 0.0f) {
+		Out.s = Delta / (1.0f - absolute(Max + Min - 1.0f));
+	}
+	else {
+		Out.h = 0.5f * Max;
+		Out.s = 1.0f;
+		Out.l = Max;
+		return Out;
+	}
+	if (RGB.r >= Max)
+		Out.h = (RGB.g - RGB.b) / Delta;
+	else if (RGB.g >= Max)
+		Out.h = 2.0 + (RGB.b - RGB.r) / Delta;
+	else
+		Out.h = 4.0 + (RGB.r - RGB.g) / Delta;
+
+	Out.h *= 60.0;
+
+	if (Out.h < 0.0)
+		Out.h += 360.0;
+
+	Out.h /= 360.0f;
+
+	return Out;
+}
 
 extern const char *Localize(const char *Str);
 

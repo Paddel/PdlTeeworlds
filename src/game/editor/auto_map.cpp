@@ -1,5 +1,6 @@
-#include <stdio.h>	// sscanf
 
+
+#include <base/system.h>
 #include <engine/console.h>
 #include <engine/storage.h>
 #include <engine/shared/linereader.h>
@@ -30,7 +31,7 @@ void CAutoMapper::Load(const char* pTileName)
 	char aBuf[256];
 
 	// read each line
-	while(char *pLine = LineReader.Get())
+	while(const char *pLine = LineReader.Get())
 	{
 		// skip blank/empty lines as well as comments
 		if(str_length(pLine) > 0 && pLine[0] != '#' && pLine[0] != '\n' && pLine[0] != '\r'
@@ -55,7 +56,8 @@ void CAutoMapper::Load(const char* pTileName)
 					int ID = 0;
 					char aFlip[128] = "";
 
-					sscanf(pLine, "Index %d %127s", &ID, aFlip);
+					int Len = 0;
+					str_scan(pLine, Len, "Index %d %127s", &ID, aFlip);
 
 					CIndexRule NewIndexRule;
 					NewIndexRule.m_ID = ID;
@@ -86,13 +88,15 @@ void CAutoMapper::Load(const char* pTileName)
 					int Value = CPosRule::EMPTY;
 					bool IndexValue = false;
 
-					sscanf(pLine, "Pos %d %d %127s", &x, &y, aValue);
+					int Len = 0;
+					str_scan(pLine, Len, "Pos %d %d %127s", &x, &y, aValue);
 
 					if(!str_comp(aValue, "FULL"))
 						Value = CPosRule::FULL;
 					else if(!str_comp_num(aValue, "INDEX", 5))
 					{
-						sscanf(pLine, "Pos %*d %*d INDEX %d", &Value);
+						Len = 0;
+						str_scan(pLine, Len, "Pos %*d %*d INDEX %d", &Value);
 						IndexValue = true;
 					}
 
@@ -101,7 +105,8 @@ void CAutoMapper::Load(const char* pTileName)
 				}
 				else if(!str_comp_num(pLine, "Random", 6) && pCurrentIndex)
 				{
-					sscanf(pLine, "Random %d", &pCurrentIndex->m_RandomValue);
+					int Len = 0;
+					str_scan(pLine, Len, "Random %d", &pCurrentIndex->m_RandomValue);
 				}
 			}
 		}
@@ -192,7 +197,7 @@ void CAutoMapper::Proceed(CLayerTiles *pLayer, int ConfigID)
 				}
 
 				if(RespectRules &&
-					(pConf->m_aIndexRules[i].m_RandomValue <= 1 || (int)((float)rand() / ((float)RAND_MAX + 1) * pConf->m_aIndexRules[i].m_RandomValue) == 1))
+					(pConf->m_aIndexRules[i].m_RandomValue <= 1 || (int)((float)random() / ((float)rand_max() + 1) * pConf->m_aIndexRules[i].m_RandomValue) == 1))
 				{
 					pTile->m_Index = pConf->m_aIndexRules[i].m_ID;
 					pTile->m_Flags = pConf->m_aIndexRules[i].m_Flag;

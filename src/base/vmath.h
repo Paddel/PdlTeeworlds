@@ -1,9 +1,10 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #ifndef BASE_VMATH_H
 #define BASE_VMATH_H
 
-#include <math.h>
+//#include <math.h>
+
+#include "math_complex.h"
 
 // ------------------------------------
 
@@ -48,7 +49,7 @@ public:
 template<typename T>
 inline T length(const vector2_base<T> &a)
 {
-	return sqrtf(a.x*a.x + a.y*a.y);
+	return squarerootf(a.x*a.x + a.y*a.y);
 }
 
 template<typename T>
@@ -66,7 +67,7 @@ inline T dot(const vector2_base<T> a, const vector2_base<T> &b)
 template<typename T>
 inline vector2_base<T> normalize(const vector2_base<T> &v)
 {
-	T l = (T)(1.0f/sqrtf(v.x*v.x + v.y*v.y));
+	T l = (T)(1.0f/squarerootf(v.x*v.x + v.y*v.y));
 	return vector2_base<T>(v.x*l, v.y*l);
 }
 
@@ -83,10 +84,6 @@ inline vector2_base<T> closest_point_on_line(vector2_base<T> line_point0, vector
 	T d = length(line_point0-line_point1);
 	T t = dot(v, c)/d;
 	return mix(line_point0, line_point1, clamp(t, (T)0, (T)1));
-	/*
-	if (t < 0) t = 0;
-	if (t > 1.0f) return 1.0f;
-	return t;*/
 }
 
 // ------------------------------------
@@ -132,7 +129,7 @@ public:
 template<typename T>
 inline T length(const vector3_base<T> &a)
 {
-	return sqrtf(a.x*a.x + a.y*a.y + a.z*a.z);
+	return squarerootf(a.x*a.x + a.y*a.y + a.z*a.z);
 }
 
 template<typename T>
@@ -150,7 +147,7 @@ inline T dot(const vector3_base<T> &a, const vector3_base<T> &b)
 template<typename T>
 inline vector3_base<T> normalize(const vector3_base<T> &v)
 {
-	T l = (T)(1.0f/sqrtf(v.x*v.x + v.y*v.y + v.z*v.z));
+	T l = (T)(1.0f/squarerootf(v.x*v.x + v.y*v.y + v.z*v.z));
 	return vector3_base<T>(v.x*l, v.y*l, v.z*l);
 }
 

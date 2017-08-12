@@ -70,8 +70,8 @@ public:
 	static void ConMapSave(IConsole::IResult *pResult, void *pUserData);
 	static void ConMapLoad(IConsole::IResult *pResult, void *pUserData);
 
-	static void WriteBlockScore(int index, char *pResult, int pResultSize, void *pData);
-	static void WriteTop3(int index, char *pResult, int pResultSize, void *pData);
+	static void WriteBlockScore(int index, char *pResult, int pResultSize, void *pData, int Row, int MaxRows);
+	static void WriteTop3(int index, char *pResult, int pResultSize, void *pData, int Row, int MaxRows);
 
 	CTile *MapTiles()  { return m_pTiles; }
 	int MapWidth() const { return m_MapWidth; }

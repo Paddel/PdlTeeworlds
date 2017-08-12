@@ -1,8 +1,6 @@
 #pragma once
 
-#include <iostream>
 #include <base/system.h>
-//using namespace std;
 
 #define MAX_MAPSTRING_SIZE 1024*2
 
@@ -14,7 +12,7 @@ static inline void ReduceString(char *str, int num)
 	for(int k=num; k < len-1; k++){
 		str[k-num] = str[k+1];
 	}
-	str[len-1-num] = NULL;
+	str[len-1-num] = '\0';
 }
 
 static char *GetSepStr(char SepChar, char **content)
@@ -22,7 +20,7 @@ static char *GetSepStr(char SepChar, char **content)
 	char *pContStr = *content;
 	char *pOutStr  = 0;
 
-	if(*content == NULL)//string is empty
+	if(*content == '\0')//string is empty
 		return "";
 
 	int len = str_length(pContStr);
@@ -56,10 +54,10 @@ static int GetSepInt(char SepChar, char **content)
 		return -1;
 
 	//Check chars
-	for(unsigned int i = 0; i < strlen(pNumStr); i++)
+	for(unsigned int i = 0; i < str_length(pNumStr); i++)
 	{
 		bool check = false;
-		for(unsigned int a = 0; a < strlen(Nums); a++)
+		for(unsigned int a = 0; a < str_length(Nums); a++)
 		{
 			if(pNumStr[i] == Nums[a])
 			{//char is available
@@ -74,7 +72,7 @@ static int GetSepInt(char SepChar, char **content)
 		}
 	}
 
-	return atoi(pNumStr);
+	return str_toint(pNumStr);
 }
 
 static inline bool IsAsciiStr(char *content)

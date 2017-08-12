@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #ifndef GAME_CLIENT_COMPONENTS_MENUS_H
 #define GAME_CLIENT_COMPONENTS_MENUS_H
 
@@ -283,9 +282,10 @@ class CMenus : public CComponent, public CTextureUser
 	static void RenderExtrasVariableStr(char *pName, char *pScriptName, char *pValue, char *pLength, char *pDefault, char *pFlags, char *pDesc, void *pData);
 	void RenderVariable(int index, char *pResult, int pResultSize, void *pData);
 	void RenderExtrasGeneral(CUIRect MainView);
-	static void GetMenuIdentityResult(int Index, char *pResult, int pResultSize, void *pData);
+	static void GetMenuIdentityResult(int Index, char *pResult, int pResultSize, void *pData, int Row, int MaxRows);
 	void RenderExtrasIdentities(CUIRect MainView);
 	void RenderExtrasDummies(CUIRect MainView);
+	void RenderExtrasMapinker(CUIRect MainView);
 	void RenderExtras(CUIRect MainView);
 
 	void SetActive(bool Active);
@@ -297,7 +297,7 @@ public:
 	void RenderSunrays();
 
 	void InitMainButtons();
-	void DoMainButtons();
+	void DoMainButtons(bool Init = false);
 
 	enum
 	{

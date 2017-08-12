@@ -16,6 +16,6 @@ public:
 
 	virtual void OnRender();
 
-	static void CheckResult(int index, char *pResult, int pResultSize, void *pData);
-	static void CheckGetIp(int index, char *pResult, int pResultSize, void *pData);
+	static void CheckResult(int index, char *pResult, int pResultSize, void *pData, int Row, int MaxRows);
+	static void CheckGetIp(int index, char *pResult, int pResultSize, void *pData, int Row, int MaxRows);
 };

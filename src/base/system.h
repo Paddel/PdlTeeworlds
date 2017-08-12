@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 
 /*
 	Title: OS Abstraction
@@ -142,6 +141,17 @@ void mem_copy(void *dest, const void *source, unsigned size);
 		<mem_copy>
 */
 void mem_move(void *dest, const void *source, unsigned size);
+
+/*
+	Function: mem_set
+		Sets a complete memory block to a specific value
+
+	Parameters:
+		block - Pointer to the block to zero out
+		size - Size of the block
+		value - Value to write
+*/
+void mem_set(void *block, unsigned size, int value);
 
 /*
 	Function: mem_zero
@@ -463,7 +473,14 @@ int64 time_freq();
 	Returns:
 		The time as a UNIX timestamp
 */
-int time_timestamp();
+int64 time_timestamp();
+
+int time_year(int64 ts);
+int time_month(int64 ts);
+int time_day(int64 ts);
+int time_hour(int64 ts);
+int time_minute(int64 ts);
+int time_second(int64 ts);
 
 /* Group: Network General */
 typedef struct
@@ -748,6 +765,19 @@ void str_append(char *dst, const char *src, int dst_size);
 void str_copy(char *dst, const char *src, int dst_size);
 
 /*
+	Function: str_scan
+		Scans a string for parameters.
+
+	Parameters:
+		src - Source to scan.
+		len - Counts the length of the String.
+		fmt - Format of scanning.
+		... - Parameters for the formating.
+*/
+int _str_scan(const char ** str, int *length, const char * format, ...);
+#define str_scan(src, len, fmt, ...) _str_scan(&src, &len, fmt "%n", __VA_ARGS__, &len)
+
+/*
 	Function: str_length
 		Returns the length of a zero terminated string.
 
@@ -776,6 +806,22 @@ int str_length(const char *str);
 */
 void str_format(char *buffer, int buffer_size, const char *format, ...);
 
+
+/*
+	Function: str_fcat
+		Performs printf formating appending to a buffer.
+
+	Parameters:
+		buffer - Pointer to the buffer to recive the formated string.
+		buffer_size - Size of the buffer.
+		format - printf formating string.
+		... - Parameters for the formating.
+
+	Remarks:
+		- See the C manual for syntax for the printf formating string.
+		- The strings are treated as zero-termineted strings.
+		- Garantees that dst string will contain zero-termination.
+*/
 void str_fcat(char *buffer, int buffer_size, const char *format, ...);
 
 /*
@@ -1300,8 +1346,15 @@ int create_http_socket();
 void console_hide();
 void console_show();
 
-char *ClipboardGet();
-void ClipboardSet(const char *pStr, int Size);
+char *clipboard_get();
+void clipboard_set(const char *pStr, int Size);
+
+//Math
+void random_timeseet();
+int random();
+const int rand_max();
+float frandom();
+void sort_quick(void* base, size_t num, size_t size, int(*compar)(const void*, const void*));
 
 #ifdef __cplusplus
 }

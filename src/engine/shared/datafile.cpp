@@ -1,10 +1,12 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
+#include <zlib.h>
+
 #include <base/math.h>
 #include <base/system.h>
 #include <engine/storage.h>
+
 #include "datafile.h"
-#include <zlib.h>
+
 
 static const int DEBUG=0;
 

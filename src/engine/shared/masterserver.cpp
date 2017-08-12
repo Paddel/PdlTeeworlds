@@ -1,6 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include <stdio.h>	// sscanf
+
 
 #include <base/system.h>
 
@@ -146,7 +144,8 @@ public:
 
 			// parse line
 			char aAddrStr[NETADDR_MAXSTRSIZE];
-			if(sscanf(pLine, "%127s %47s", Info.m_aHostname, aAddrStr) == 2 && net_addr_from_str(&Info.m_Addr, aAddrStr) == 0)
+			int Len = 0;
+			if(str_scan(pLine, Len, "%127s %47s", Info.m_aHostname, aAddrStr) == 2 && net_addr_from_str(&Info.m_Addr, aAddrStr) == 0)
 			{
 				Info.m_Addr.port = 8300;
 				bool Added = false;

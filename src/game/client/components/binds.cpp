@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <engine/config.h>
 #include <engine/shared/config.h>
 #include "binds.h"
@@ -25,6 +24,7 @@ CBinds::CBinds()
 {
 	mem_zero(m_aaKeyBindings, sizeof(m_aaKeyBindings));
 	m_SpecialBinds.m_pBinds = this;
+	m_Inited = false;
 }
 
 void CBinds::Bind(int KeyID, const char *pStr, bool Alt)
@@ -34,12 +34,16 @@ void CBinds::Bind(int KeyID, const char *pStr, bool Alt)
 
 	str_copy(m_aaKeyBindings[KeyID](Alt), pStr, CODE_LEN);
 
-	char aBuf[256];
-	if(!m_aaKeyBindings[KeyID](Alt)[0])
-		str_format(aBuf, sizeof(aBuf), "unbound %s (%d)", Input()->KeyName(KeyID), KeyID);
-	else
-		str_format(aBuf, sizeof(aBuf), "bound %s (%d) = %s", Input()->KeyName(KeyID), KeyID, m_aaKeyBindings[KeyID](Alt));
-	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "binds", aBuf);
+
+	if (m_Inited || g_Config.m_Debug)
+	{
+		char aBuf[256];
+		if (!m_aaKeyBindings[KeyID](Alt)[0])
+			str_format(aBuf, sizeof(aBuf), "unbound %s (%d)", Input()->KeyName(KeyID), KeyID);
+		else
+			str_format(aBuf, sizeof(aBuf), "bound %s (%d) = %s", Input()->KeyName(KeyID), KeyID, m_aaKeyBindings[KeyID](Alt));
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "binds", aBuf);
+	}
 }
 
 
@@ -313,4 +317,9 @@ void CBinds::OnRender()
 	}
 
 	s_LastAlt = Alt;
+}
+
+void CBinds::OnInit()
+{
+	m_Inited = true;
 }

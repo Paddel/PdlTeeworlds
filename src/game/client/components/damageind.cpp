@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <engine/demo.h>
 #include <engine/graphics.h>
 #include <game/generated/protocol.h>
@@ -41,7 +40,7 @@ void CDamageInd::Create(vec2 Pos, vec2 Dir)
 		i->m_Pos = Pos;
 		i->m_StartTime = Client()->LocalTime();
 		i->m_Dir = Dir*-1;
-		i->m_StartAngle = (( (float)rand()/(float)RAND_MAX) - 1.0f) * 2.0f * pi;
+		i->m_StartAngle = (( (float)random()/(float)rand_max()) - 1.0f) * 2.0f * pi;
 	}
 }
 

@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <base/math.h>
 #include <engine/graphics.h>
 #include <engine/demo.h>
@@ -105,7 +104,7 @@ void CParticles::Update(float TimePassed)
 
 			// move the point
 			vec2 Vel = m_aParticles[i].m_Vel*TimePassed;
-			Collision()->MovePoint(&m_aParticles[i].m_Pos, &Vel, 0.1f+0.9f*frandom(), NULL);
+			Collision()->MovePoint(&m_aParticles[i].m_Pos, &Vel, 0.1f+0.9f*frandom(), 0x0);
 			m_aParticles[i].m_Vel = Vel* (1.0f/TimePassed);
 
 			m_aParticles[i].m_Life += TimePassed;

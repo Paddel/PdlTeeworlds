@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <base/math.h>
 
 #include <engine/client.h>
@@ -8,9 +7,10 @@
 
 #include <game/generated/client_data.h>
 #include <game/client/render.h>
-#include "editor.h"
 
 #include <game/localization.h>
+
+#include "editor.h"
 
 CLayerTiles::CLayerTiles(int w, int h)
 {

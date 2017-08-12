@@ -1,0 +1,4 @@
+Testmap
+quick menu
+chat id
+scoreboard id

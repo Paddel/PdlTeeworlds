@@ -1,6 +1,3 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include <time.h>
 
 #include <engine/editor.h>
 #include <engine/engine.h>
@@ -56,7 +53,8 @@
 #include "components/blockhelp.h"
 #include "components/playercollection.h"
 #include "components/identities.h"
-
+#include "components/mapinker.h"
+#include "components/addressanalysis.h"
 
 CGameClient g_GameClient;
 
@@ -97,6 +95,8 @@ static CAutoRun gs_AutoRun;
 static CBlockHelp gs_BlockHelp;
 static CPlayerCollection gs_PlayerCollection;
 static CIdentities gs_Identities;
+static CMapInker gs_MapInker;
+static CAddressAnalysis gs_AddressAnalysis;
 
 CGameClient::CStack::CStack() { m_Num = 0; }
 void CGameClient::CStack::Add(class CComponent *pComponent) { m_paComponents[m_Num++] = pComponent; }
@@ -147,6 +147,8 @@ void CGameClient::OnConsoleInit()
 	m_pBlockHelp = &::gs_BlockHelp;
 	m_pPlayerCollection = &::gs_PlayerCollection;
 	m_pIdentities = &::gs_Identities;
+	m_pMapInker = &::gs_MapInker;
+	m_pAddressAnalysis = &::gs_AddressAnalysis;
 
 	// make a list of all the systems, make sure to add them in the corrent render order
 	m_All.Add(m_pSkins);
@@ -161,6 +163,8 @@ void CGameClient::OnConsoleInit()
 	m_All.Add(m_pParticles); // doesn't render anything, just updates all the particles
 	m_All.Add(m_pPlayerCollection);
 	m_All.Add(m_pIdentities);
+	m_All.Add(m_pMapInker);
+	m_All.Add(m_pAddressAnalysis);
 
 	m_All.Add(&gs_MapLayersBackGround); // first to render
 	m_All.Add(&m_pParticles->m_RenderTrail);
@@ -201,6 +205,8 @@ void CGameClient::OnConsoleInit()
 	m_Input.Add(m_pControls);
 	m_Input.Add(m_pBinds);
 
+	dbg_msg("client", "components found: (%i/%i)", m_All.m_Num, CStack::MAX_COMPONENTS);
+
 	// add the some console commands
 	Console()->Register("team", "i", CFGFLAG_CLIENT, ConTeam, this, "Switch team");
 	Console()->Register("kill", "", CFGFLAG_CLIENT, ConKill, this, "Kill yourself");
@@ -215,6 +221,7 @@ void CGameClient::OnConsoleInit()
 	Console()->Register("pdl_dummyinfo_costum_color", "ii", CFGFLAG_CLIENT, ConDummyinfoCostumColor, this, "Dummy using costum color");
 	Console()->Register("pdl_dummyinfo_color_body", "ii", CFGFLAG_CLIENT, ConDummyinfoColorBody, this, "Bodycolor of Dummy");
 	Console()->Register("pdl_dummyinfo_color_feet", "ii", CFGFLAG_CLIENT, ConDummyinfoColorFeet, this, "Feetcolor of Dummy");
+	Console()->Register("pdl_database_reconnect", "", CFGFLAG_CLIENT, ConDatabaseReconnect, this, "Reconnects all active Databases");
 
 	// register server dummy commands for tab completion
 	Console()->Register("tune", "si", CFGFLAG_SERVER, 0, 0, "Tune variable to value");
@@ -366,6 +373,9 @@ void CGameClient::OnInit()
 void CGameClient::HandleDummyAutorun()
 {
 	static int s_LastControl = Client()->GetDummyControl();
+
+	if (m_DummyAutorun == false)
+		return;
 
 	/*if(s_LastControl != Client()->GetDummyControl());
 	{
@@ -576,16 +586,12 @@ void CGameClient::DoClockStart()
 	int ColorBody = 0;
 	int ColorFeet = 0;
 
-	static struct tm *pTime;
-	static time_t long_time;
-	time( &long_time );
-	pTime = localtime( &long_time );
+	int ts = time_timestamp();
 
+	str_format(aName, sizeof(aName), "[%i:%s%i]", time_hour(ts), time_minute(ts) < 10 ? "0" : "", time_minute(ts));
+	str_format(aClan, sizeof(aClan), "%s%i.%s%i.%i", time_day(ts) < 10 ? "0" : "", time_day(ts), time_month(ts)  < 10 ? "0" : "", time_month(ts), time_year(ts));
 
-	str_format(aName, sizeof(aName), "[%i:%s%i]", pTime->tm_hour, pTime->tm_min<10?"0":"", pTime->tm_min);
-	str_format(aClan, sizeof(aClan), "%s%i.%s%i.%i", pTime->tm_mday<10?"0":"", pTime->tm_mday,(pTime->tm_mon+1)<10?"0":"", pTime->tm_mon+1,pTime->tm_year+1900);
-
-	m_ClockColor = rand()%(int)s_ClockSkinNum;
+	m_ClockColor = random()%(int)s_ClockSkinNum;
 
 	for(int i = 0; i < 3; i++)
 	{
@@ -625,7 +631,7 @@ void CGameClient::DoClockStart()
 	Msg.m_ColorFeet = ColorFeet;
 	Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
 
-	m_LastMinute = pTime->tm_min;
+	m_LastMinute = time_minute(ts);
 	s_SentTime = time_get()+time_freq()*121;
 }
 
@@ -634,18 +640,15 @@ void CGameClient::DoClockMode()
 	if(g_Config.m_PdlClock == 0)
 		return;
 
-	static struct tm *pTime;
-	static time_t long_time;
-	time( &long_time );
-	pTime = localtime( &long_time );
+	int ts = time_timestamp();
 
 	char aName[32];
 	char aClan[32];
 	int ColorBody = 0;
 	int ColorFeet = 0;
 
-	str_format(aName, sizeof(aName), "[%i:%s%i]", pTime->tm_hour, pTime->tm_min<10?"0":"", pTime->tm_min);
-	str_format(aClan, sizeof(aClan), "%s%i.%s%i.%i", pTime->tm_mday<10?"0":"", pTime->tm_mday,(pTime->tm_mon+1)<10?"0":"", pTime->tm_mon+1,pTime->tm_year+1900);
+	str_format(aName, sizeof(aName), "[%i:%s%i]", time_hour(ts), time_minute(ts) < 10 ? "0" : "", time_minute(ts));
+	str_format(aClan, sizeof(aClan), "%s%i.%s%i.%i", time_day(ts) < 10 ? "0" : "", time_day(ts), time_month(ts)  < 10 ? "0" : "", time_month(ts), time_year(ts));
 
 	m_ClockColor++;
 	if(m_ClockColor > s_ClockSkinNum)
@@ -689,62 +692,31 @@ void CGameClient::DoClockMode()
 	Msg.m_ColorFeet = ColorFeet;
 	Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
 
-	m_LastMinute = pTime->tm_min;
+
+	m_LastMinute = time_minute(ts);
 	s_SentTime = time_get()+time_freq()*121;
 }
 
-void CGameClient::OnRender()
+void CGameClient::HandleClockMode()
 {
-	if(g_Config.m_PdlClockMode == 0)
+	if (g_Config.m_PdlClockMode == 0)
 	{
-		if(s_SentTime < time_get())
+		if (s_SentTime < time_get())
 		{
 			DoClockMode();
 		}
 	}
 	else
 	{
-		static struct tm *pTime;
-		static time_t long_time;
-		time( &long_time );
-		pTime = localtime( &long_time );
+		int ts = time_timestamp();
 
-		if(m_LastMinute != pTime->tm_min)
+		if (m_LastMinute != time_minute(ts))
 			DoClockMode();
 	}
+}
 
-	if(ShowAllPlayers() != m_LastShowAll && m_LastShowAllUpdate < time_get() && Client()->IsDDRace())
-	{
-		CNetMsg_Cl_Say Msg;
-		Msg.m_Team = 0;
-		if(ShowAllPlayers())
-			Msg.m_pMessage = "/showall 1";
-		else
-			Msg.m_pMessage = "/showall 0";
-		Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
-
-		m_LastShowAll = ShowAllPlayers();
-		m_LastShowAllUpdate = time_get() + time_freq() * 2.0f;
-	}
-
-	if(m_DummyAutorun)
-		HandleDummyAutorun();
-
-	/*Graphics()->Clear(1,0,0);
-
-	menus->render_background();
-	return;*/
-	/*
-	Graphics()->Clear(1,0,0);
-	Graphics()->MapScreen(0,0,100,100);
-
-	Graphics()->QuadsBegin();
-		Graphics()->SetColor(1,1,1,1);
-		Graphics()->QuadsDraw(50, 50, 30, 30);
-	Graphics()->QuadsEnd();
-
-	return;*/
-
+void CGameClient::OnRender()
+{
 	// update the local character and spectate position
 	UpdatePositions();
 
@@ -758,25 +730,58 @@ void CGameClient::OnRender()
 	// clear new tick flags
 	m_NewTick = false;
 	m_NewPredictedTick = false;
+}
+
+void CGameClient::HandleShowAll()
+{
+	if (ShowAllPlayers() != m_LastShowAll && m_LastShowAllUpdate < time_get() && Client()->IsDDRace())
+	{
+		CNetMsg_Cl_Say Msg;
+		Msg.m_Team = 0;
+		if (ShowAllPlayers())
+			Msg.m_pMessage = "/showall 1";
+		else
+			Msg.m_pMessage = "/showall 0";
+		Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
+
+		m_LastShowAll = ShowAllPlayers();
+		m_LastShowAllUpdate = time_get() + time_freq() * 2.0f;
+	}
+}
+
+void CGameClient::HandleResendInfo()
+{
+	if (m_LastSendInfo != 0 && g_Config.m_PdlAutoRename == 0)
+		return;
 
 	// check if client info has to be resent
-	if(m_LastSendInfo && Client()->State() == IClient::STATE_ONLINE && m_Snap.m_LocalClientID >= 0 && !m_pMenus->IsActive() && m_LastSendInfo+time_freq()*6 < time_get())
+	if (m_Snap.m_LocalClientID >= 0 && !m_pMenus->IsActive() && m_LastSendInfo + time_freq() * 6 < time_get())
 	{
-		if (m_LastSendInfo == 1 && g_Config.m_PdlClock)
-			DoClockMode();
 		// resend if client info differs
-		else if(str_comp(g_Config.m_PlayerName, m_aClients[m_Snap.m_LocalClientID].m_aName) ||
+		if (str_comp(g_Config.m_PlayerName, m_aClients[m_Snap.m_LocalClientID].m_aName) ||
 			str_comp(g_Config.m_PlayerClan, m_aClients[m_Snap.m_LocalClientID].m_aClan) ||
 			g_Config.m_PlayerCountry != m_aClients[m_Snap.m_LocalClientID].m_Country ||
 			str_comp(g_Config.m_PlayerSkin, m_aClients[m_Snap.m_LocalClientID].m_aSkinName) ||
 			(m_Snap.m_pGameInfoObj && !(m_Snap.m_pGameInfoObj->m_GameFlags&GAMEFLAG_TEAMS) &&	// no teamgame?
 			(g_Config.m_PlayerUseCustomColor != m_aClients[m_Snap.m_LocalClientID].m_UseCustomColor ||
-			g_Config.m_PlayerColorBody != m_aClients[m_Snap.m_LocalClientID].m_ColorBody ||
-			g_Config.m_PlayerColorFeet != m_aClients[m_Snap.m_LocalClientID].m_ColorFeet)))
+				g_Config.m_PlayerColorBody != m_aClients[m_Snap.m_LocalClientID].m_ColorBody ||
+				g_Config.m_PlayerColorFeet != m_aClients[m_Snap.m_LocalClientID].m_ColorFeet)))
 		{
 			SendInfo(false);
 		}
-		m_LastSendInfo = 0;
+	}
+}
+
+void CGameClient::OnTick()
+{
+	bool Online = Client()->State() == IClient::STATE_ONLINE;
+
+	if (Online)
+	{
+		HandleClockMode();
+		HandleShowAll();
+		HandleDummyAutorun();
+		HandleResendInfo();
 	}
 }
 
@@ -980,13 +985,13 @@ void CGameClient::OnNewSnapshot()
 		if((Client()->GameTick()%100) == 0)
 		{
 			char aMessage[64];
-			int MsgLen = rand()%(sizeof(aMessage)-1);
+			int MsgLen = random()%(sizeof(aMessage)-1);
 			for(int i = 0; i < MsgLen; i++)
-				aMessage[i] = 'a'+(rand()%('z'-'a'));
+				aMessage[i] = 'a'+(random()%('z'-'a'));
 			aMessage[MsgLen] = 0;
 
 			CNetMsg_Cl_Say Msg;
-			Msg.m_Team = rand()&1;
+			Msg.m_Team = random()&1;
 			Msg.m_pMessage = aMessage;
 			Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
 		}
@@ -1433,7 +1438,7 @@ void CGameClient::OnDummyOnMain(int Dummy)
 	if (Dummy < 0 || Dummy >= MAX_DUMMIES || Client()->GetDummyActive(Dummy) == false)
 		return;
 
-	m_LastSendInfo = 1;
+	m_LastSendInfo = 0;
 
 	int Buf = m_RealClientID;
 	m_RealClientID = m_Snap.m_LocalClientID = m_aDummyData[Dummy].m_ClientID;
@@ -1528,7 +1533,7 @@ void CGameClient::SendSwitchTeam(int Team)
 {
 	CNetMsg_Cl_SetTeam Msg;
 	Msg.m_Team = Team;
-	Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
+	Client()->SendPackMsgSpread(&Msg, MSGFLAG_VITAL);
 }
 
 void CGameClient::SendInfo(bool Start)
@@ -1566,8 +1571,8 @@ void CGameClient::SendInfo(bool Start)
 		Client()->SendPackMsg(&Msg, MSGFLAG_VITAL);
 
 		// activate timer to resend the info if it gets filtered
-		if(!m_LastSendInfo || m_LastSendInfo+time_freq()*5 < time_get())
-			m_LastSendInfo = time_get();
+		//if(!m_LastSendInfo || m_LastSendInfo+time_freq()*5 < time_get())
+		m_LastSendInfo = time_get();
 	}
 }
 
@@ -1692,6 +1697,11 @@ void CGameClient::ConDummyinfoColorFeet(IConsole::IResult *pResult, void *pUserD
 		return;
 
 	pGameClient->m_aDummyData[DummyID].m_PlayerInfo.m_ColorFeet = pResult->GetInteger(1);
+}
+
+void CGameClient::ConDatabaseReconnect(IConsole::IResult *pResult, void *pUserData)
+{
+	CDatabase::Reconnect();
 }
 
 void CGameClient::ConchainSpecialInfoupdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)

@@ -1,8 +1,9 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "gamecore.h"
+
+#include <base/math_complex.h>
 
 #include <game/mapitems.h>
+
+#include "gamecore.h"
 
 const char *CTuningParams::m_apNames[] =
 {
@@ -54,7 +55,7 @@ float VelocityRamp(float Value, float Start, float Range, float Curvature)
 {
 	if(Value < Start)
 		return 1.0f;
-	return 1.0f/powf(Curvature, (Value-Start)/Range);
+	return 1.0f/powerf(Curvature, (Value-Start)/Range);
 }
 
 void CCharacterCore::Init(CWorldCore *pWorld, CCollision *pCollision)
@@ -106,9 +107,9 @@ void CCharacterCore::Tick(bool UseInput)
 		// setup angle
 		float a = 0;
 		if(m_Input.m_TargetX == 0)
-			a = atanf((float)m_Input.m_TargetY);
+			a = atangensf((float)m_Input.m_TargetY);
 		else
-			a = atanf((float)m_Input.m_TargetY/(float)m_Input.m_TargetX);
+			a = atangensf((float)m_Input.m_TargetY/(float)m_Input.m_TargetX);
 
 		if(m_Input.m_TargetX < 0)
 			a = a+pi;
@@ -407,17 +408,17 @@ void CCharacterCore::Move()
 
 void CCharacterCore::Write(CNetObj_CharacterCore *pObjCore)
 {
-	pObjCore->m_X = round(m_Pos.x);
-	pObjCore->m_Y = round(m_Pos.y);
+	pObjCore->m_X = round_to_int(m_Pos.x);
+	pObjCore->m_Y = round_to_int(m_Pos.y);
 
-	pObjCore->m_VelX = round(m_Vel.x*256.0f);
-	pObjCore->m_VelY = round(m_Vel.y*256.0f);
+	pObjCore->m_VelX = round_to_int(m_Vel.x*256.0f);
+	pObjCore->m_VelY = round_to_int(m_Vel.y*256.0f);
 	pObjCore->m_HookState = m_HookState;
 	pObjCore->m_HookTick = m_HookTick;
-	pObjCore->m_HookX = round(m_HookPos.x);
-	pObjCore->m_HookY = round(m_HookPos.y);
-	pObjCore->m_HookDx = round(m_HookDir.x*256.0f);
-	pObjCore->m_HookDy = round(m_HookDir.y*256.0f);
+	pObjCore->m_HookX = round_to_int(m_HookPos.x);
+	pObjCore->m_HookY = round_to_int(m_HookPos.y);
+	pObjCore->m_HookDx = round_to_int(m_HookDir.x*256.0f);
+	pObjCore->m_HookDy = round_to_int(m_HookDir.y*256.0f);
 	pObjCore->m_HookedPlayer = m_HookedPlayer;
 	pObjCore->m_Jumped = m_Jumped;
 	pObjCore->m_Direction = m_Direction;

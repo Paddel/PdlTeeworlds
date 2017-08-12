@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #ifndef GAME_CLIENT_COMPONENTS_BINDS_H
 #define GAME_CLIENT_COMPONENTS_BINDS_H
 #include <game/client/component.h>
@@ -18,6 +17,7 @@ struct CBind
 class CBinds : public CComponent
 {
 	CBind m_aaKeyBindings[KEY_LAST];
+	bool m_Inited;
 
 	int GetKeyID(const char *pKeyName);
 
@@ -51,6 +51,7 @@ public:
 	virtual void OnConsoleInit();
 	virtual bool OnInput(IInput::CEvent Event);
 	virtual void OnRender();
+	virtual void OnInit();
 
 	IInput *GetInput() const { return Input(); }
 };

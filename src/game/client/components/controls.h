@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #ifndef GAME_CLIENT_COMPONENTS_CONTROLS_H
 #define GAME_CLIENT_COMPONENTS_CONTROLS_H
 #include <base/vmath.h>
@@ -22,7 +21,7 @@ enum
 };
 
 
-class CControls : public CComponent
+class CControls : public CComponent, public CTextureUser
 {
 private:
 	int m_FakeInputData[NUM_FAKEINPUTDATA];
@@ -55,9 +54,11 @@ public:
 
 	void GrenadeKills();
 
+	virtual void OnInit();
 	virtual void OnReset();
 	virtual void OnRelease();
 	virtual void OnRender();
+	virtual void InitTextures();
 	virtual void OnMessage(int MsgType, void *pRawMsg);
 	virtual bool OnMouseMove(float x, float y);
 	virtual void OnConsoleInit();

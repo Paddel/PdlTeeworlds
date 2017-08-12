@@ -1,14 +1,14 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <base/math.h>
 
 #include <engine/console.h>
 #include <engine/graphics.h>
 
-#include "editor.h"
 #include <game/generated/client_data.h>
 #include <game/client/render.h>
 #include <game/localization.h>
+
+#include "editor.h"
 
 CLayerQuads::CLayerQuads()
 {
@@ -160,8 +160,8 @@ void Rotate(vec2 *pCenter, vec2 *pPoint, float Rotation)
 {
 	float x = pPoint->x - pCenter->x;
 	float y = pPoint->y - pCenter->y;
-	pPoint->x = x * cosf(Rotation) - y * sinf(Rotation) + pCenter->x;
-	pPoint->y = x * sinf(Rotation) + y * cosf(Rotation) + pCenter->y;
+	pPoint->x = x * cosinusf(Rotation) - y * sinusf(Rotation) + pCenter->x;
+	pPoint->y = x * sinusf(Rotation) + y * cosinusf(Rotation) + pCenter->y;
 }
 
 void CLayerQuads::BrushRotate(float Amount)

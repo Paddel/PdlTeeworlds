@@ -43,12 +43,13 @@ if not exist %VSPATH%vsvars32.bat (
 
 :type
 @echo ..
-set /p answer=compiling d/c/o/n/od:
+set /p answer=compiling d/c/o/n/t/od:
 cls
 if "%answer%"=="d" (GOTO debug)
 if "%answer%"=="c" (GOTO clear)
 if "%answer%"=="o" (GOTO output)
 if "%answer%"=="od" (GOTO outputdebug)
+if "%answer%"=="t" (GOTO tools)
 if "%answer%"=="n" (GOTO compile)
 goto compile
 
@@ -83,7 +84,7 @@ goto type
 :output
 echo.
 @echo "<<<-START        Compiling by Paddel->>>"
-@call bam.exe client_debug -j 8 > compile_out.txt
+@call bam.exe client_release -j 8 > compile_out.txt
 @echo "<<<- FINISHED    Compiling by Paddel->>>"
 echo.
 goto type
@@ -92,6 +93,15 @@ goto type
 echo.
 @echo "<<<-START        Compiling by Paddel->>>"
 @call bam.exe client_debug -j 8 > compile_out.txt
+@echo "<<<- FINISHED    Compiling by Paddel->>>"
+echo.
+goto type
+
+
+:tools
+echo.
+@echo "<<<-START        Compiling by Paddel->>>"
+@call bam.exe release -j 8
 @echo "<<<- FINISHED    Compiling by Paddel->>>"
 echo.
 goto type

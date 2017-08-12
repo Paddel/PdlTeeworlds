@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 
 #include <base/system.h>
 
@@ -628,7 +627,7 @@ int CEditor::UiDoValueSelector(void *pID, CUIRect *pRect, const char *pLabel, in
 			if(absolute(s_Value) > Scale)
 			{
 				int Count = (int)(s_Value/Scale);
-				s_Value = fmod(s_Value, Scale);
+				s_Value = fmodulu(s_Value, Scale);
 				Current += Step*Count;
 				if(Current < Min)
 					Current = Min;
@@ -1028,8 +1027,8 @@ static void Rotate(const CPoint *pCenter, CPoint *pPoint, float Rotation)
 {
 	int x = pPoint->x - pCenter->x;
 	int y = pPoint->y - pCenter->y;
-	pPoint->x = (int)(x * cosf(Rotation) - y * sinf(Rotation) + pCenter->x);
-	pPoint->y = (int)(x * sinf(Rotation) + y * cosf(Rotation) + pCenter->y);
+	pPoint->x = (int)(x * cosinusf(Rotation) - y * sinusf(Rotation) + pCenter->x);
+	pPoint->y = (int)(x * sinusf(Rotation) + y * cosinusf(Rotation) + pCenter->y);
 }
 
 void CEditor::DoQuad(CQuad *q, int Index)
@@ -2601,7 +2600,7 @@ void CEditor::SortImages()
 		array<CEditorImage*> lTemp = array<CEditorImage*>(m_Map.m_lImages);
 		gs_pSortedIndex = new int[lTemp.size()];
 
-		qsort(m_Map.m_lImages.base_ptr(), m_Map.m_lImages.size(), sizeof(CEditorImage*), CompareImageName);
+		sort_quick(m_Map.m_lImages.base_ptr(), m_Map.m_lImages.size(), sizeof(CEditorImage*), CompareImageName);
 
 		for(int OldIndex = 0; OldIndex < lTemp.size(); OldIndex++)
 			for(int NewIndex = 0; NewIndex < m_Map.m_lImages.size(); NewIndex++)

@@ -6,13 +6,14 @@
 
 #include <game/generated/client_data.h>
 #include <game/client/components/identities.h>
+#include <game/client/components/mapinker.h>
 #include <game/client/animstate.h>
 
 #include "skins.h"
 #include "countryflags.h"
 #include "menus.h"
 
-#define PAGE_SIZE 75
+#define PAGE_SIZE 72
 
 CUIRect VariableButton;
 static int s_VariableIDs[1024] = { };
@@ -103,16 +104,19 @@ void CMenus::RenderExtrasGeneral(CUIRect MainView)
 {
 	IConfig *pConfig = Kernel()->RequestInterface<IConfig>();
 	s_VariableCounter = 0;
-	MainView.HSplitTop(18.0f, &VariableButton, NULL);
-	VariableButton.VSplitLeft(MainView.w / 3.0f, &VariableButton, NULL);
-	VariableButton.VSplitLeft(8.0f, NULL, &VariableButton);
+	MainView.HSplitTop(18.0f, &VariableButton, 0x0);
+	VariableButton.VSplitLeft(MainView.w / 3.0f, &VariableButton, 0x0);
+	VariableButton.VSplitLeft(8.0f, 0x0, &VariableButton);
 	s_ResetView = MainView;
 	s_pLastName = 0x0;
 	pConfig->GetAllConfigVariables(&RenderExtrasVariableInt, &RenderExtrasVariableStr, this);
 }
 
-void CMenus::GetMenuIdentityResult(int Index, char *pResult, int pResultSize, void *pData)
+void CMenus::GetMenuIdentityResult(int Index, char *pResult, int pResultSize, void *pData, int Row, int MaxRows)
 {
+	if (Row == 0)
+		s_NumPlayerItems = 0;
+
 	CIdentities::CPlayerItem *pCurItem = &s_PlayerItems[s_NumPlayerItems];
 
 	switch(Index)
@@ -142,12 +146,12 @@ void CMenus::RenderExtrasIdentities(CUIRect MainView)
 	static char s_ConditionText[256] = { };
 
 	MainView.HSplitTop(50.0f, &Top, &Button);
-	Button.VSplitLeft(8.0f, NULL, &Button);
+	Button.VSplitLeft(8.0f, 0x0, &Button);
 
 	Top.HSplitTop(30, &Top, &Slider);
-	Top.HSplitTop(8.0f, NULL, &Top);
+	Top.HSplitTop(8.0f, 0x0, &Top);
 	Top.VSplitLeft(256.0f, &Top, &CountText);
-	Top.VSplitLeft(8.0f, NULL, &Top);
+	Top.VSplitLeft(8.0f, 0x0, &Top);
 	static float s_ContionOffset = 0;
 	if(DoEditBox(s_ConditionText, &Top, s_ConditionText, sizeof(s_ConditionText), 14.0f, &s_ContionOffset))
 	{
@@ -161,20 +165,23 @@ void CMenus::RenderExtrasIdentities(CUIRect MainView)
 	UI()->DoLabel(&CountText, aBuf, 10.0f, 1);
 
 	int Value = 0;
+	static int64 s_RefreshTime = time_get();
 	if(s_Count > 0 && s_Count > PAGE_SIZE)
 	{
 		float Span = s_Count / PAGE_SIZE;
 		Value = DoScrollbarH(&s_SliderID, &Slider, s_LastSliderValue / Span ) * Span + 0.1f;
 
-		if(Value != s_LastSliderValue)
+		if (Value != s_LastSliderValue)
+		{
+			s_RefreshTime = time_get() + time_freq() * 0.05f;
 			s_Refresh = true;
-
-		s_LastSliderValue = Value;
+			s_NumPlayerItems = 0;
+			s_LastSliderValue = Value;
+		}
 	}
 
-	if(s_Refresh)
+	if(s_Refresh && s_RefreshTime < time_get())
 	{
-		s_NumPlayerItems = 0;
 		m_pClient->m_pIdentities->GetMenuIdentity(&GetMenuIdentityResult, this, Value * PAGE_SIZE, PAGE_SIZE, s_ConditionText);
 		s_Refresh = false;
 	}
@@ -195,7 +202,7 @@ void CMenus::RenderExtrasIdentities(CUIRect MainView)
 			Graphics()->QuadsEnd();
 		}
 
-		Line.VSplitLeft(10.0f, NULL, &Line);
+		Line.VSplitLeft(10.0f, 0x0, &Line);
 
 		int SkinID = m_pClient->m_pSkins->Find(s_PlayerItems[i].m_Info.m_aSkin);
 		if(SkinID == -1) SkinID = m_pClient->m_pSkins->Find("default");
@@ -217,13 +224,13 @@ void CMenus::RenderExtrasIdentities(CUIRect MainView)
 
 		RenderTools()->RenderTee(CAnimState::GetIdle(), &SkinInfo, 0, vec2(1, 0), vec2(Line.x + SkinInfo.m_Size / 2, Line.y + SkinInfo.m_Size / 2));
 
-		Line.VSplitLeft(SkinInfo.m_Size, NULL, &Line);
+		Line.VSplitLeft(SkinInfo.m_Size, 0x0, &Line);
 		UI()->DoLabel(&Line, s_PlayerItems[i].m_Info.m_aName, 10.0f, -1);
 
-		Line.VSplitLeft(110.0f, NULL, &Line);
+		Line.VSplitLeft(110.0f, 0x0, &Line);
 		UI()->DoLabel(&Line, s_PlayerItems[i].m_Info.m_aClan, 10.0f, -1);
 
-		Line.VSplitLeft(70.0f, NULL, &Line);
+		Line.VSplitLeft(70.0f, 0x0, &Line);
 
 		const CCountryFlags::CCountryFlag *pEntry = m_pClient->m_pCountryFlags->GetByCountryCode(s_PlayerItems[i].m_Info.m_Country);
 
@@ -231,12 +238,12 @@ void CMenus::RenderExtrasIdentities(CUIRect MainView)
 		m_pClient->m_pCountryFlags->Render(pEntry->m_CountryCode, &Color, Line.x, Line.y, 28.0f, 14.0f);
 			//UI()->DoLabel(&Label, pEntry->m_aCountryCodeString, 10.0f, 0);
 
-		Line.VSplitLeft(34.0f, NULL, &Line);
+		Line.VSplitLeft(34.0f, 0x0, &Line);
 		char aBuf[32];
 		str_format(aBuf, sizeof(aBuf), "%i", s_PlayerItems[i].m_Latency);
 		UI()->DoLabel(&Line, aBuf, 10.0f, -1);
 
-		Line.VSplitLeft(24.0f, NULL, &Line);
+		Line.VSplitLeft(24.0f, 0x0, &Line);
 		Line.h = 17.0f; Line.w = 14.0f;
 		static int s_PaddelButton = 0;
 		static int s_TextureCopy = Graphics()->LoadTexture("pdl_copy.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
@@ -244,11 +251,11 @@ void CMenus::RenderExtrasIdentities(CUIRect MainView)
 		{
 			char aBuf[512];
 			m_pClient->m_pIdentities->SerializeIdentity(aBuf, sizeof(aBuf), s_PlayerItems[i]);
-			ClipboardSet(aBuf, str_length(aBuf));
+			clipboard_set(aBuf, str_length(aBuf));
 		}
 
 
-		Button.HSplitTop(20.0f, NULL, &Button);
+		Button.HSplitTop(20.0f, 0x0, &Button);
 
 		if(Button.y + 20.0f >= MainView.y + MainView.h)
 		{
@@ -265,7 +272,7 @@ void CMenus::RenderExtrasDummies(CUIRect MainView)
 	MainView.HSplitTop(24.0f, &Top, &MainView);
 
 	{//Top
-		Top.HSplitTop(8.0f, NULL, &Top);
+		Top.HSplitTop(8.0f, 0x0, &Top);
 		Top.VSplitRight(128.0f, &Top, &Button);
 		static int s_ScrollbarID = -1;
 		s_DummyID = DoScrollbarH(&s_ScrollbarID, &Top, s_DummyID / (float)MAX_DUMMIES ) * (float)MAX_DUMMIES;
@@ -277,33 +284,33 @@ void CMenus::RenderExtrasDummies(CUIRect MainView)
 
 	MainView.VSplitMid(&Left, &Right);
 
-	Left.VSplitLeft(8.0f, NULL, &Left);
-	Left.VSplitRight(8.0f, &Left, NULL);
-	Right.VSplitLeft(8.0f, NULL, &Right);
-	Right.VSplitRight(8.0f, &Right, NULL);
+	Left.VSplitLeft(8.0f, 0x0, &Left);
+	Left.VSplitRight(8.0f, &Left, 0x0);
+	Right.VSplitLeft(8.0f, 0x0, &Right);
+	Right.VSplitRight(8.0f, &Right, 0x0);
 	IGameClient::CPlayerInfo *pDummyInfo = m_pClient->GetDummyPlayerInfo(s_DummyID);
 
 	{//name
 		Left.HSplitTop(20.0f, &Button, &Left);
 		UI()->DoLabel(&Button, "Name", 15.0f, -1);
 		float TextSize = TextRender()->TextWidth(0, 15.0f, "Name", -1);
-		Button.VSplitLeft(TextSize + 8.0f, NULL, &Button);
+		Button.VSplitLeft(TextSize + 8.0f, 0x0, &Button);
 		static float s_NameOffset = 0.0f;
 		DoEditBox(pDummyInfo->m_aName, &Button, pDummyInfo->m_aName, sizeof(pDummyInfo->m_aName), 14.0f, &s_NameOffset);
 	}
 
 	{//clan
-		Left.HSplitTop(8.0f, NULL, &Left);
+		Left.HSplitTop(8.0f, 0x0, &Left);
 		Left.HSplitTop(20.0f, &Button, &Left);
 		UI()->DoLabel(&Button, "Clan", 15.0f, -1);
 		float TextSize = TextRender()->TextWidth(0, 15.0f, "Clan", -1);
-		Button.VSplitLeft(TextSize + 8.0f, NULL, &Button);
+		Button.VSplitLeft(TextSize + 8.0f, 0x0, &Button);
 		static float s_ClanOffset = 0.0f;
 		DoEditBox(pDummyInfo->m_aClan, &Button, pDummyInfo->m_aClan, sizeof(pDummyInfo->m_aClan), 14.0f, &s_ClanOffset);
 	}
 
 	{//Country
-		Left.HSplitTop(8.0f, NULL, &Left);
+		Left.HSplitTop(8.0f, 0x0, &Left);
 
 		static float s_ScrollValue = 0.0f;
 		int OldSelected = -1;
@@ -374,7 +381,7 @@ void CMenus::RenderExtrasDummies(CUIRect MainView)
 
 		Label.VSplitLeft(Label.w+8, 0, &Label);
 		Label.VSplitLeft(126.0f, &Label, 0);
-		Label.HSplitTop(32.0f, &Label, NULL);
+		Label.HSplitTop(32.0f, &Label, 0x0);
 		static int s_PaddelButton = 0;
 		if(DoButton_Menu((void*)&s_PaddelButton, Localize("Paddel"), 0, &Label))
 		{
@@ -390,7 +397,7 @@ void CMenus::RenderExtrasDummies(CUIRect MainView)
 
 		if(s_ClipboardCheck < time_get())
 		{
-			char *pClipboard = ClipboardGet();
+			char *pClipboard = clipboard_get();
 			if(str_comp_num(pClipboard, "Identity\r\n", str_length("Identity\r\n"))  == 0 && str_length(pClipboard) < 512)
 			{
 				s_PasteAble = true;
@@ -403,8 +410,8 @@ void CMenus::RenderExtrasDummies(CUIRect MainView)
 		
 		if(s_PasteAble)
 		{
-			Label.HSplitTop(38.0f, NULL, &Label);
-			Label.HSplitTop(32.0f, &Label, NULL);
+			Label.HSplitTop(38.0f, 0x0, &Label);
+			Label.HSplitTop(32.0f, &Label, 0x0);
 			static int s_PasteButton = 0;
 			if(DoButton_Menu((void*)&s_PasteButton, Localize("Paste"), 0, &Label))
 			{
@@ -548,6 +555,332 @@ void CMenus::RenderExtrasDummies(CUIRect MainView)
 	}
 }
 
+void CMenus::RenderExtrasMapinker(CUIRect MainView)
+{
+	CUIRect LayerSelection, Right, Button;
+	static const int MAX_GROUPS = 100;
+	static bool s_GroupExtrended[MAX_GROUPS] = {};
+	CLayers *pLayers = m_pClient->Layers();
+	static bool s_NightTime = m_pClient->m_pMapInker->NightTime() && g_Config.m_PdlMapinkerTimeEnable == 1;
+	bool LoadFromInker = false;
+
+	bool UpdateMapInker = false;
+	static float MapR = 255.0f, MapG = 255.0f, MapB = 255.0f,
+		MapH = 360.0f, MapS = 255.0f, MapL = 255.0f,
+		MapA = 255.0f, MapI = 255.0f;
+	static int s_SliderR = 0, s_SliderG = 0, s_SliderB = 0,
+		s_SliderH = 0, s_SliderS = 0, s_SliderL = 0,
+		s_SliderA = 0, s_SliderI = 0;
+
+	if (Client()->State() != IClient::STATE_ONLINE)
+	{
+		TextRender()->Text(0, MainView.x + 12.0f, MainView.y + 12.0f, 14.0f*UI()->Scale(), "Go ingame to use Mapinker", -1);
+		return;
+	}
+
+	if (m_pClient->Layers()->NumGroups() > MAX_GROUPS)
+	{
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "ERROR: More than %i groups", MAX_GROUPS);
+		TextRender()->Text(0, MainView.x + 12.0f, MainView.y + 12.0f, 14.0f*UI()->Scale(), aBuf, -1);
+		return;
+	}
+
+	MainView.VSplitLeft(170.0f, &LayerSelection, &Right);
+
+	static float s_ScrollValue = 0.0f;
+	static int SelectedLayer = -1;
+	int SelectedItem = -1;
+
+	int NumItems = 0;
+	for (int g = 0; g < pLayers->NumGroups(); g++)
+	{
+		CMapItemGroup *pGroup = pLayers->GetGroup(g);
+		NumItems++;
+		if (s_GroupExtrended[g])
+		{
+			for (int l = 0; l < pGroup->m_NumLayers; l++)
+			{
+				int Index = pGroup->m_StartLayer + l;
+				if (SelectedLayer == Index)
+					SelectedItem = NumItems;
+
+				NumItems++;
+			}
+		}
+	}
+
+
+	UiDoListboxStart(&s_ScrollValue, &LayerSelection, 20.0f, Localize("Layers"), "", NumItems, 1, SelectedItem, s_ScrollValue);
+
+	for (int g = 0; g < pLayers->NumGroups(); g++)
+	{
+		CMapItemGroup *pGroup = pLayers->GetGroup(g);
+
+		char aGroupName[32];
+
+		CListboxItem Item = UiDoListboxNextItem(pGroup, 0);
+		if (Item.m_Visible)
+		{
+			char aBuf[64];
+			if (pGroup->m_Version >= 3)
+			{
+				IntsToStr(pGroup->m_aName, sizeof(aGroupName) / sizeof(int), aGroupName);
+				str_format(aBuf, sizeof(aBuf), "#%i %s", g, aGroupName);
+			}
+			else
+				str_format(aBuf, sizeof(aBuf), "#%i", g);
+
+			str_sanitize_strong(aBuf);
+			TextRender()->TextColor(0.7f, 0.7f, 0.7f, 1.0f);
+			UI()->DoLabelScaled(&Item.m_Rect, aBuf, 14.0f, -1);
+
+			if (g != 0)
+			{
+				Graphics()->TextureSet(-1);
+				Graphics()->LinesBegin();
+				IGraphics::CLineItem Line = IGraphics::CLineItem(Item.m_Rect.x, Item.m_Rect.y, Item.m_Rect.x+Item.m_Rect.w, Item.m_Rect.y);
+				Graphics()->LinesDraw(&Line, 1);
+				Graphics()->LinesEnd();
+			}
+
+			Graphics()->TextureSet(-1);
+			Graphics()->LinesBegin();
+			IGraphics::CLineItem Line = IGraphics::CLineItem(Item.m_Rect.x, Item.m_Rect.y + Item.m_Rect.h, Item.m_Rect.x + Item.m_Rect.w, Item.m_Rect.y + Item.m_Rect.h);
+			Graphics()->LinesDraw(&Line, 1);
+			Graphics()->LinesEnd();
+		}
+
+		if (s_GroupExtrended[g] == false)
+			continue;
+
+		for (int l = 0; l < pGroup->m_NumLayers; l++)
+		{
+			int Index = pGroup->m_StartLayer + l;
+			CMapItemLayer *pLayer = pLayers->GetLayer(Index);
+			
+		
+			CListboxItem Item = UiDoListboxNextItem(pLayer, SelectedLayer == Index);
+			if (Item.m_Visible)
+			{
+				TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+				char aLayerName[32] = {};
+				if (pLayer->m_Type == LAYERTYPE_TILES)
+				{
+					if (((CMapItemLayerTilemap *)pLayer)->m_Version >= 3)
+						IntsToStr(((CMapItemLayerTilemap *)pLayer)->m_aName, sizeof(aLayerName) / sizeof(int), aLayerName);
+					else
+						str_format(aLayerName, sizeof(aLayerName), "<%i>", l);
+
+					CMapItemLayerTilemap *pTilemap = reinterpret_cast<CMapItemLayerTilemap *>(pLayer);
+					if (pTilemap->m_Flags != 0)
+						TextRender()->TextColor(0.2f, 0.0f, 0.0f, 1.0f);
+				}
+				else if (pLayer->m_Type == LAYERTYPE_QUADS)
+				{
+					if (((CMapItemLayerQuads *)pLayer)->m_Version >= 2)
+						IntsToStr(((CMapItemLayerQuads *)pLayer)->m_aName, sizeof(aLayerName) / sizeof(int), aLayerName);
+					else
+						str_format(aLayerName, sizeof(aLayerName), "<%i>", l);
+				}
+
+				str_sanitize_strong(aLayerName);
+
+				
+				UI()->DoLabelScaled(&Item.m_Rect, aLayerName, 14.0f, -1);
+			}
+		}
+	}
+
+	int Selected = UiDoListboxEnd(&s_ScrollValue, 0);
+	if (Selected != SelectedItem)
+	{
+		for (int g = 0; g < pLayers->NumGroups(); g++)
+		{
+			CMapItemGroup *pGroup = pLayers->GetGroup(g);
+
+			if (Selected <= 0)
+			{
+				if (Selected == 0)
+					s_GroupExtrended[g] = !s_GroupExtrended[g];
+
+				break;
+			}
+
+			Selected--;
+
+			if (s_GroupExtrended[g])
+			{
+				for (int l = 0; l < pGroup->m_NumLayers; l++)
+				{
+					if (Selected == 0)
+					{
+						bool Game = false;
+
+						CMapItemLayer *pLayer = pLayers->GetLayer(pGroup->m_StartLayer + l);
+						if (pLayer->m_Type == LAYERTYPE_TILES)
+							if ((reinterpret_cast<CMapItemLayerTilemap *>(pLayer))->m_Flags != 0)
+								Game = true;
+
+						if (Game == false)
+						{
+							SelectedLayer = pGroup->m_StartLayer + l;
+							Selected = -1;
+							LoadFromInker = true;
+						}
+						break;
+					}
+
+					Selected--;
+				}
+			}
+		}
+	}
+
+	if (SelectedItem != -1)
+	{
+
+
+		Right.HSplitTop(16.0f, &Button, &Right);
+
+		static int s_NightButton = 0;
+		if (DoButton_CheckBox(&s_NightButton, "Night-Design", s_NightTime, &Button))
+		{
+			s_NightTime = !s_NightTime;
+			LoadFromInker = true;
+		}
+
+		CMapInkerLayer *pMapInkerLayer = m_pClient->m_pMapInker->MapInkerLayer(s_NightTime, SelectedLayer);
+		if (pMapInkerLayer == 0x0)
+			return;
+
+		Right.HSplitTop(8.0f, 0x0, &Right);
+		Right.HSplitTop(16.0f, &Button, &Right);
+		static int s_UsingButton = 0;
+		if (DoButton_CheckBox(&s_UsingButton, "Use Layer", pMapInkerLayer->m_Used, &Button))
+			pMapInkerLayer->m_Used = !pMapInkerLayer->m_Used;
+
+		Right.HSplitTop(8.0f, 0x0, &Right);
+		Right.HSplitTop(16.0f, &Button, &Right);
+		UI()->DoLabel(&Button, "Red", 12.f, -1);
+		Button.VSplitLeft(46.0f, 0x0, &Button);
+		float MapRN = DoScrollbarH(&s_SliderR, &Button, MapR / 255.0f) * 255.0f;
+		Right.HSplitTop(8.0f, 0x0, &Right);
+		Right.HSplitTop(16.0f, &Button, &Right);
+		UI()->DoLabel(&Button, "Green", 12.f, -1);
+		Button.VSplitLeft(46.0f, 0x0, &Button);
+		float MapGN = DoScrollbarH(&s_SliderG, &Button, MapG / 255.0f) * 255.0f;
+		Right.HSplitTop(8.0f, 0x0, &Right);
+		Right.HSplitTop(16.0f, &Button, &Right);
+		UI()->DoLabel(&Button, "Blue", 12.f, -1);
+		Button.VSplitLeft(46.0f, 0x0, &Button);
+		float MapBN = DoScrollbarH(&s_SliderB, &Button, MapB / 255.0f) * 255.0f;
+		if (fabsolute(MapRN - MapR) > 1.0f || fabsolute(MapGN - MapG) > 1.0f || fabsolute(MapBN - MapB) > 1.0f)
+		{
+			MapR = MapRN; MapG = MapGN; MapB = MapBN;
+			vec3 HSL = RgbToHsl(vec3(MapR / 255.0f, MapG / 255.0f, MapB / 255.0f));
+			MapH = HSL.h * 360.0f; MapS = HSL.s * 255.0f; MapL = HSL.l * 255.0f;
+			UpdateMapInker = true;
+		}
+
+		Right.HSplitTop(18.0f, 0x0, &Right);
+		Right.HSplitTop(16.0f, &Button, &Right);
+		UI()->DoLabel(&Button, "Hue", 12.f, -1);
+		Button.VSplitLeft(46.0f, 0x0, &Button);
+		float MapHN = DoScrollbarH(&s_SliderH, &Button, MapH / 360.0f) * 360.0f;
+		Right.HSplitTop(8.0f, 0x0, &Right);
+		Right.HSplitTop(16.0f, &Button, &Right);
+		UI()->DoLabel(&Button, "Sat.", 12.f, -1);
+		Button.VSplitLeft(46.0f, 0x0, &Button);
+		float MapSN = DoScrollbarH(&s_SliderS, &Button, MapS / 255.0f) * 255.0f;
+		Right.HSplitTop(8.0f, 0x0, &Right);
+		Right.HSplitTop(16.0f, &Button, &Right);
+		UI()->DoLabel(&Button, "Lht.", 12.f, -1);
+		Button.VSplitLeft(46.0f, 0x0, &Button);
+		float MapLN = DoScrollbarH(&s_SliderL, &Button, MapL / 255.0f) * 255.0f;
+		if (fabsolute(MapHN - MapH) > 1.0f || fabsolute(MapSN - MapS) > 1.0f || fabsolute(MapLN - MapL) > 1.0f)
+		{
+			MapH = MapHN; MapS = MapSN; MapL = MapLN;
+			vec3 RGB = HslToRgb(vec3(MapH / 360.0f, MapS / 255.0f, MapL / 255.0f));
+			MapR = RGB.r * 255.0f; MapG = RGB.g * 255.0f; MapB = RGB.b * 255.0f;
+			UpdateMapInker = true;
+		}
+
+		Right.HSplitTop(18.0f, 0x0, &Right);
+		Right.HSplitTop(16.0f, &Button, &Right);
+		UI()->DoLabel(&Button, "Alpha", 12.f, -1);
+		Button.VSplitLeft(46.0f, 0x0, &Button);
+		float MapAN = DoScrollbarH(&s_SliderA, &Button, MapA / 255.0f) * 255.0f;
+		Right.HSplitTop(8.0f, 0x0, &Right);
+		Right.HSplitTop(16.0f, &Button, &Right);
+		UI()->DoLabel(&Button, "Int", 12.f, -1);
+		Button.VSplitLeft(46.0f, 0x0, &Button);
+		float MapIN = DoScrollbarH(&s_SliderI, &Button, MapI / 255.0f) * 255.0f;
+		if (fabsolute(MapAN - MapA) > 1.0f || fabsolute(MapIN - MapI) > 1.0f)
+		{
+			MapA = MapAN;
+			MapI = MapIN;
+			UpdateMapInker = true;
+		}
+
+		Right.HSplitTop(8.0f, 0x0, &Right);
+		Right.HSplitTop(16.0f, &Button, &Right);
+		UI()->DoLabel(&Button, Localize("Texture"), 10.0f, -1);
+		Button.VSplitLeft(46.0f, 0x0, &Button);
+		static float s_TextureOffset = 0.0f;
+		if (DoEditBox(pMapInkerLayer->m_aExternalTexture, &Button, pMapInkerLayer->m_aExternalTexture, sizeof(pMapInkerLayer->m_aExternalTexture), 14.0f, &s_TextureOffset))
+		{
+			m_pClient->m_pMapInker->UpdateTextureID(s_NightTime, SelectedLayer);
+			pMapInkerLayer->m_Used = true;
+		}
+
+		Right.HSplitTop(8.0f, 0x0, &Right);
+		Right.HSplitTop(16.0f, &Button, &Right);
+
+		Button.VSplitLeft(Right.w * 0.5f - 8.0f, &Button, 0x0);
+		static int s_ButtonSave = 0;
+		if (DoButton_Menu(&s_ButtonSave, Localize("Save"), 0, &Button))
+			m_pClient->m_pMapInker->Save();
+
+		Button.VSplitLeft(Right.w * 0.5f + 16.0f, 0x0, &Button);
+		Button.VSplitLeft(Right.w * 0.5f - 8.0f, &Button, 0x0);
+		static int s_ButtonLoad = 0;
+		if (DoButton_Menu(&s_ButtonLoad, Localize("Load"), 0, &Button))
+		{
+			m_pClient->m_pMapInker->Load();
+			LoadFromInker = true;
+		}
+
+		if (UpdateMapInker)
+		{
+			pMapInkerLayer->m_Color = vec4(MapR / 255.0f, MapG / 255.0f, MapB / 255.0f, MapA / 255.0f);
+			pMapInkerLayer->m_Interpolation = MapI / 255.0f;
+			pMapInkerLayer->m_Used = true;
+		}
+	}
+
+	static int s_LoadedMaps = 0;
+	if (s_LoadedMaps != m_pClient->m_pMapInker->GetLoadedMaps())
+	{
+		LoadFromInker = true;
+		mem_zero(s_GroupExtrended, sizeof(s_GroupExtrended));
+		s_LoadedMaps = m_pClient->m_pMapInker->GetLoadedMaps();
+	}
+
+	if (LoadFromInker)
+	{
+		CMapInkerLayer *pMapInkerLayer = m_pClient->m_pMapInker->MapInkerLayer(s_NightTime, SelectedLayer);
+		if (pMapInkerLayer != 0x0)
+		{
+			vec4 Color = pMapInkerLayer->m_Color;
+			MapR = Color.r*255.0f; MapG = Color.g*255.0f; MapB = Color.b*255.0f;
+			vec3 HSL = RgbToHsl(vec3(Color.r, Color.g, Color.b));
+			MapH = HSL.h * 360.0f; MapS = HSL.s * 255.0f; MapL = HSL.l * 255.0f;
+			MapA = Color.a*255.0f; MapI = pMapInkerLayer->m_Interpolation*255.0f;
+		}
+	}
+}
+
 void CMenus::RenderExtras(CUIRect MainView)
 {
 	CUIRect TabBar, Button, Temp;
@@ -561,7 +894,8 @@ void CMenus::RenderExtras(CUIRect MainView)
 	const char *aTabs[] = {
 		Localize("General"),
 		"Identities",
-		"Dummies"};
+		"Dummies",
+		"Mapinker"};
 
 	int NumTabs = (int)(sizeof(aTabs)/sizeof(*aTabs));
 
@@ -573,10 +907,17 @@ void CMenus::RenderExtras(CUIRect MainView)
 			s_ExtrasPage = i;
 	}
 
+	MainView.VSplitLeft(8.0f, 0x0, &MainView);
+	MainView.VSplitRight(16.0f, &MainView, 0x0);
+	MainView.HSplitTop(8.0f, 0x0, &MainView);
+	MainView.HSplitBottom(16.0f, &MainView, 0x0);
+
 	if(s_ExtrasPage == 0)
 		RenderExtrasGeneral(MainView);
 	else if(s_ExtrasPage == 1)
 		RenderExtrasIdentities(MainView);
 	else if(s_ExtrasPage == 2)
 		RenderExtrasDummies(MainView);
+	else if (s_ExtrasPage == 3)
+		RenderExtrasMapinker(MainView);
 }

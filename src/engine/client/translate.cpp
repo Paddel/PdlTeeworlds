@@ -1,7 +1,6 @@
 
 #include <base/system.h>
 #include <engine/shared/config.h>
-#include <string.h>
 
 #include "translate.h"
 
@@ -73,12 +72,12 @@ char * CTranslator::EscapeStr(const char * From)
 {
         unsigned long Len = str_length(From);
         unsigned long DestLen = Len * 4;
-        char * Result = new char[DestLen + 1];
-        memset(Result, 0, DestLen + 1);
+        char * pResult = new char[DestLen + 1];
+        mem_set(pResult, 0, DestLen + 1);
         
         unsigned long Char;
         const char * Text = From;
-        char * ToText = Result;
+        char * ToText = pResult;
         unsigned long i;
         for (i = 0; i < Len; i++)
         {
@@ -92,14 +91,14 @@ char * CTranslator::EscapeStr(const char * From)
                 }
         }
         
-        return Result;
+        return pResult;
 }
 
 char * CTranslator::UnquoteStr(const char * From)
 {
 	unsigned long Len = str_length(From);
 	char * Result = new char[Len + 1];
-	memset(Result, 0, Len + 1);
+	mem_set(Result, 0, Len + 1);
 	
 	char * ToText = Result;
 	for (unsigned long i = 0; i < Len; i++)

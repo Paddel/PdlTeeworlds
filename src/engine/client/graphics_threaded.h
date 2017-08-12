@@ -104,7 +104,7 @@ public:
 		//
 		PRIMTYPE_INVALID = 0,
 		PRIMTYPE_LINES,	
-		PRIMTYPE_TRIANGLE,
+		PRIMTYPE_TRIANGLES,
 		PRIMTYPE_QUADS,
 	};
 
@@ -376,6 +376,7 @@ public:
 	virtual void FrameBufferEnd() {}
 	virtual void FrameBufferToScreen() {}
 
+	virtual bool UseShader() { return false; }
 	virtual void ShaderBegin(int Index) {}
 	virtual void ShaderEnd() {}
 	virtual void ShaderUniformSet(const char *pName, float *pVar, int Num) {}

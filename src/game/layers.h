@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #ifndef GAME_LAYERS_H
 #define GAME_LAYERS_H
 
@@ -20,6 +19,7 @@ public:
 	CLayers();
 	void Init(class IKernel *pKernel);
 	int NumGroups() const { return m_GroupsNum; };
+	int NumLayers() const { return m_LayersNum; };
 	class IMap *Map() const { return m_pMap; };
 	CMapItemGroup *GameGroup() const { return m_pGameGroup; };
 	CMapItemLayerTilemap *GameLayer() const { return m_pGameLayer; };

@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <base/system.h>
 #include <engine/storage.h>
 #include "linereader.h"
@@ -61,6 +60,7 @@ public:
 				fs_makedir(GetPath(TYPE_SAVE, "screenshots/auto", aPath, sizeof(aPath)));
 				fs_makedir(GetPath(TYPE_SAVE, "maps", aPath, sizeof(aPath)));
 				fs_makedir(GetPath(TYPE_SAVE, "downloadedmaps", aPath, sizeof(aPath)));
+				fs_makedir(GetPath(TYPE_SAVE, "mapinker", aPath, sizeof(aPath)));
 			}
 			fs_makedir(GetPath(TYPE_SAVE, "dumps", aPath, sizeof(aPath)));
 			fs_makedir(GetPath(TYPE_SAVE, "demos", aPath, sizeof(aPath)));

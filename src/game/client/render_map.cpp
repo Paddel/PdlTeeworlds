@@ -1,6 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include <math.h>
+
 #include <base/math.h>
 #include <engine/graphics.h>
 
@@ -26,7 +24,7 @@ void CRenderTools::RenderEvalEnvelope(CEnvPoint *pPoints, int NumPoints, int Cha
 		return;
 	}
 
-	Time = fmod(Time, pPoints[NumPoints-1].m_Time/1000.0f)*1000.0f;
+	Time = fmodulu(Time, pPoints[NumPoints-1].m_Time/1000.0f)*1000.0f;
 	for(int i = 0; i < NumPoints-1; i++)
 	{
 		if(Time >= pPoints[i].m_Time && Time <= pPoints[i+1].m_Time)
@@ -74,8 +72,8 @@ static void Rotate(CPoint *pCenter, CPoint *pPoint, float Rotation)
 {
 	int x = pPoint->x - pCenter->x;
 	int y = pPoint->y - pCenter->y;
-	pPoint->x = (int)(x * cosf(Rotation) - y * sinf(Rotation) + pCenter->x);
-	pPoint->y = (int)(x * sinf(Rotation) + y * cosf(Rotation) + pCenter->y);
+	pPoint->x = (int)(x * cosinusf(Rotation) - y * sinusf(Rotation) + pCenter->x);
+	pPoint->y = (int)(x * sinusf(Rotation) + y * cosinusf(Rotation) + pCenter->y);
 }
 
 void CRenderTools::RenderQuads(CQuad *pQuads, int NumQuads, int RenderFlags, ENVELOPE_EVAL pfnEval, void *pUser)

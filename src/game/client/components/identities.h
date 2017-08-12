@@ -24,9 +24,9 @@ public:
 
 	IGameClient::CPlayerInfo RandomPlayerInfo();
 
-	static void ResultRandomPlayerInfo(int Index, char *pResult, int pResultSize, void *pData);
+	static void ResultRandomPlayerInfo(int Index, char *pResult, int pResultSize, void *pData, int Row, int MaxRows);
 
-	static void GetMenuCountResult(int Index, char *pResult, int pResultSize, void *pData);
+	static void GetMenuCountResult(int Index, char *pResult, int pResultSize, void *pData, int Row, int MaxRows);
 	int GetMenuCount(char *pCondition);
 	void GetMenuIdentity(ResultFunction ResultFunc, void *pData, int Page, int PageSize, char *pCondition);
 

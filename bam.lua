@@ -101,18 +101,14 @@ network_source = ContentCompile("network_source", "src/game/generated/protocol.c
 network_header = ContentCompile("network_header", "src/game/generated/protocol.h")
 client_content_source = ContentCompile("client_content_source", "src/game/generated/client_data.cpp")
 client_content_header = ContentCompile("client_content_header", "src/game/generated/client_data.h")
-server_content_source = ContentCompile("server_content_source", "src/game/generated/server_data.cpp")
-server_content_header = ContentCompile("server_content_header", "src/game/generated/server_data.h")
 
 AddDependency(network_source, network_header)
 AddDependency(client_content_source, client_content_header)
-AddDependency(server_content_source, server_content_header)
 
 nethash = CHash("src/game/generated/nethash.cpp", "src/engine/shared/protocol.h", "src/game/generated/protocol.h", "src/game/tuning.h", "src/game/gamecore.cpp", network_header)
 
 client_link_other = {}
 client_depends = {}
-server_link_other = {}
 
 if family == "windows" then
 	table.insert(client_depends, CopyToDirectory(".", "other\\freetype\\lib\\freetype.dll"))
@@ -128,10 +124,8 @@ if family == "windows" then
 
 	if config.compiler.driver == "cl" then
 		client_link_other = {ResCompile("other/icons/teeworlds_cl.rc")}
-		server_link_other = {ResCompile("other/icons/teeworlds_srv_cl.rc")}
 	elseif config.compiler.driver == "gcc" then
 		client_link_other = {ResCompile("other/icons/teeworlds_gcc.rc")}
-		server_link_other = {ResCompile("other/icons/teeworlds_srv_gcc.rc")}
 	end
 end
 
@@ -143,8 +137,12 @@ function build(settings)
 	--settings.objdir = Path("objs")
 	settings.cc.Output = Intermediate_Output
 
+	
+	
 	if config.compiler.driver == "cl" then
 		settings.cc.flags:Add("/wd4244")
+		--settings.cc.flags:Add("/wd4577")
+		settings.cc.flags:Add("/EHsc")
 	else
 		settings.cc.flags:Add("-Wall", "-fno-exceptions")
 		if platform == "macosx" then
@@ -232,23 +230,19 @@ function build(settings)
 
 	engine = Compile(engine_settings, Collect("src/engine/shared/*.cpp", "src/base/*.c"))
 	client = Compile(client_settings, Collect("src/engine/client/*.cpp"))
-	server = Compile(server_settings, Collect("src/engine/server/*.cpp"))
 
 	versionserver = Compile(settings, Collect("src/versionsrv/*.cpp"))
 	masterserver = Compile(settings, Collect("src/mastersrv/*.cpp"))
 	game_shared = Compile(settings, Collect("src/game/*.cpp"), nethash, network_source)
 	game_client = Compile(settings, CollectRecursive("src/game/client/*.cpp"), client_content_source)
-	game_server = Compile(settings, CollectRecursive("src/game/server/*.cpp"), server_content_source)
 	game_editor = Compile(settings, Collect("src/game/editor/*.cpp"))
 
 	-- build tools (TODO: fix this so we don't get double _d_d stuff)
 	tools_src = Collect("src/tools/*.cpp", "src/tools/*.c")
 
 	client_osxlaunch = {}
-	server_osxlaunch = {}
 	if platform == "macosx" then
 		client_osxlaunch = Compile(client_settings, "src/osxlaunch/client.m")
-		server_osxlaunch = Compile(launcher_settings, "src/osxlaunch/server.m")
 	end
 
 	tools = {}
@@ -257,18 +251,11 @@ function build(settings)
 		tools[i] = Link(settings, toolname, Compile(settings, v), engine, zlib, pnglite)
 	end
 
-	-- build client, server, version server and master server
+	-- build client, version server and master server
 	client_exe = Link(client_settings, "Paddel", game_shared, game_client,
 		engine, client, game_editor, zlib, pnglite, wavpack,
 		client_link_other, client_osxlaunch)
 
-	server_exe = Link(server_settings, "teeworlds_srv", engine, server,
-		game_shared, game_server, zlib, server_link_other)
-
-	serverlaunch = {}
-	if platform == "macosx" then
-		serverlaunch = Link(launcher_settings, "serverlaunch", server_osxlaunch)
-	end
 
 	versionserver_exe = Link(server_settings, "versionsrv", versionserver,
 		engine, zlib)
@@ -278,14 +265,13 @@ function build(settings)
 
 	-- make targets
 	c = PseudoTarget("client".."_"..settings.config_name, client_exe, client_depends)
-	s = PseudoTarget("server".."_"..settings.config_name, server_exe, serverlaunch)
-	g = PseudoTarget("game".."_"..settings.config_name, client_exe, server_exe)
+	g = PseudoTarget("game".."_"..settings.config_name, client_exe)
 
 	v = PseudoTarget("versionserver".."_"..settings.config_name, versionserver_exe)
 	m = PseudoTarget("masterserver".."_"..settings.config_name, masterserver_exe)
 	t = PseudoTarget("tools".."_"..settings.config_name, tools)
 
-	all = PseudoTarget(settings.config_name, c, s, v, m, t)
+	all = PseudoTarget(settings.config_name, c, v, m, t)
 	return all
 end
 
@@ -340,11 +326,6 @@ if platform == "macosx" and arch == "ia32" then
 	DefaultTarget("game_debug_x86")
 	PseudoTarget("release", ppc_r, x86_r)
 	PseudoTarget("debug", ppc_d, x86_d)
-
-	PseudoTarget("server_release", "server_release_x86", "server_release_ppc")
-	PseudoTarget("server_debug", "server_debug_x86", "server_debug_ppc")
-	PseudoTarget("client_release", "client_release_x86", "client_release_ppc")
-	PseudoTarget("client_debug", "client_debug_x86", "client_debug_ppc")
 else
 	build(debug_settings)
 	build(release_settings)

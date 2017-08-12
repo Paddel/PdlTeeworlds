@@ -1,5 +1,5 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
+#include <base/math_complex.h>
 #include <base/math.h>
 #include <base/system.h>
 
@@ -132,7 +132,7 @@ static void Mix(short *pFinalOut, unsigned Frames)
 				const int Range = 1500; // magic value, remove
 				int dx = v->m_X - m_CenterX;
 				int dy = v->m_Y - m_CenterY;
-				int Dist = (int)sqrtf((float)dx*dx+dy*dy); // float here. nasty
+				int Dist = (int)squarerootf((float)dx*dx+dy*dy); // float here. nasty
 				int p = IntAbs(dx);
 				if(Dist >= 0 && Dist < Range)
 				{

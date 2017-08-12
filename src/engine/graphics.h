@@ -1,10 +1,10 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #ifndef ENGINE_GRAPHICS_H
 #define ENGINE_GRAPHICS_H
 
-#include "kernel.h"
 #include <base/tl/array.h>
+
+#include "kernel.h"
 
 class CTextureUser
 {
@@ -78,15 +78,17 @@ public:
 		SHADER_LOAD,
 		SHADER_BLUR,
 		SHADER_GRAYSCALE,
+		SHADER_RIPPLE,
+		SHADER_RAYS,
+		SHADER_LOADGREY,
 		NUM_SHADERS,
 	};
 
 	enum
 	{
 		FBO_FULLSCREEN = 0,
-		FBO_LAYER2,
-		FBO_LAYER3,
-		FBO_LAYER4,
+		FBO_RIPPLE,
+		FBO_LOADGREY,
 		NUM_FBO,
 	};
 
@@ -99,7 +101,8 @@ public:
 	virtual void FrameBufferBegin(int Index) = 0;
 	virtual void FrameBufferEnd() = 0;
 	virtual void FrameBufferToScreen() = 0;
-
+	
+	virtual bool UseShader() = 0;
 	virtual void ShaderBegin(int Index) = 0;
 	virtual void ShaderEnd() = 0;
 	virtual void ShaderUniformSet(const char *pName, float *pVar, int Num) = 0;

@@ -1,9 +1,6 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #ifndef BASE_MATH_H
 #define BASE_MATH_H
-
-#include <stdlib.h>
 
 template <typename T>
 inline T clamp(T val, T min, T max)
@@ -32,8 +29,6 @@ inline T mix(const T a, const T b, TB amount)
 {
 	return a + (b-a)*amount;
 }
-
-inline float frandom() { return rand()/(float)(RAND_MAX); }
 
 // float to fixed
 inline int f2fx(float v) { return (int)(v*(float)(1<<10)); }

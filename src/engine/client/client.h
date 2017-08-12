@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #ifndef ENGINE_CLIENT_CLIENT_H
 #define ENGINE_CLIENT_CLIENT_H
 
@@ -321,8 +320,10 @@ public:
 	void ProcessServerPacket(CNetChunk *pPacket);
 	void ProcessServerPacketDummy(CNetChunk *pPacket, int Index);
 
-	virtual int MapDownloadAmount() { return m_MapdownloadAmount; }
-	virtual int MapDownloadTotalsize() { return m_MapdownloadTotalsize; }
+	virtual int MapDownloadAmount() { return m_MapdownloadAmount; };
+	virtual int MapDownloadTotalsize() { return m_MapdownloadTotalsize; };
+	virtual unsigned CurrentMapCrc() { return m_CurrentMapCrc; };
+	virtual char *CurrentMapName() { return m_aCurrentMap; };
 
 	void PumpNetwork();
 

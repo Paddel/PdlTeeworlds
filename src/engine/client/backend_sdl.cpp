@@ -309,10 +309,13 @@ void CCommandProcessorFragment_OpenGL::Cmd_Render(const CCommandBuffer::SCommand
 	switch(pCommand->m_PrimType)
 	{
 	case CCommandBuffer::PRIMTYPE_QUADS:
-		glDrawArrays(GL_QUADS, 0, pCommand->m_PrimCount*4);
+		glDrawArrays(GL_QUADS, 0, pCommand->m_PrimCount * 4);
+		break;
+	case CCommandBuffer::PRIMTYPE_TRIANGLES:
+		glDrawArrays(GL_TRIANGLES, 0, pCommand->m_PrimCount * 3);
 		break;
 	case CCommandBuffer::PRIMTYPE_LINES:
-		glDrawArrays(GL_LINES, 0, pCommand->m_PrimCount*2);
+		glDrawArrays(GL_LINES, 0, pCommand->m_PrimCount * 2);
 		break;
 	default:
 		dbg_msg("render", "unknown primtype %d\n", pCommand->m_Cmd);

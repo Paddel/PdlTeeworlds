@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <engine/graphics.h>
 #include <engine/keys.h>
 #include <engine/demo.h>
@@ -14,7 +13,7 @@
 
 #include <game/client/components/camera.h>
 #include <game/client/components/mapimages.h>
-
+#include <game/client/components/mapinker.h>
 
 #include "maplayers.h"
 
@@ -222,9 +221,29 @@ void CMapLayers::Render(vec2 Center, float Zoom, bool UseClip)
 					else
 						Graphics()->TextureSet(m_pClient->m_pMapimages->Get(pTMap->m_Image));
 
+
+					vec4 Color = vec4(pTMap->m_Color.r / 255.0f, pTMap->m_Color.g / 255.0f, pTMap->m_Color.b / 255.0f, pTMap->m_Color.a / 255.0f);
+					
+					if (g_Config.m_PdlMapinkerEnabled == 1)
+					{
+						bool NightTime = m_pClient->m_pMapInker->NightTime();
+						CMapInkerLayer *pMapInkerLayer = m_pClient->m_pMapInker->MapInkerLayer(NightTime, pGroup->m_StartLayer + l);
+						if (pMapInkerLayer != 0x0 && pMapInkerLayer->m_Used)
+						{
+							Color = mix(vec4(
+								pTMap->m_Color.r / 255.0f, pTMap->m_Color.g / 255.0f,
+								pTMap->m_Color.b / 255.0f, pTMap->m_Color.a / 255.0f),
+								pMapInkerLayer->m_Color,
+								pMapInkerLayer->m_Interpolation);
+
+							if (pMapInkerLayer->m_aExternalTexture[0] != '\0')
+								Graphics()->TextureSet(m_pClient->m_pMapInker->LayerTextureID(NightTime, pGroup->m_StartLayer + l));
+						}
+
+					}
+
 					CTile *pTiles = (CTile *)m_pLayers->Map()->GetData(pTMap->m_Data);
 					Graphics()->BlendNone();
-					vec4 Color = vec4(pTMap->m_Color.r/255.0f, pTMap->m_Color.g/255.0f, pTMap->m_Color.b/255.0f, pTMap->m_Color.a/255.0f);
 					RenderTools()->RenderTilemap(pTiles, pTMap->m_Width, pTMap->m_Height, 32.0f, Color, TILERENDERFLAG_EXTEND|LAYERRENDERFLAG_OPAQUE,
 													EnvelopeEval, this, pTMap->m_ColorEnv, pTMap->m_ColorEnvOffset);
 					Graphics()->BlendNormal();
@@ -239,12 +258,46 @@ void CMapLayers::Render(vec2 Center, float Zoom, bool UseClip)
 					else
 						Graphics()->TextureSet(m_pClient->m_pMapimages->Get(pQLayer->m_Image));
 
-					CQuad *pQuads = (CQuad *)m_pLayers->Map()->GetDataSwapped(pQLayer->m_Data);
+					CQuad *pQuads = ((CQuad *)m_pLayers->Map()->GetDataSwapped(pQLayer->m_Data));
+					CColor ColorBuf[4];
+					mem_copy(ColorBuf, pQuads->m_aColors, sizeof(ColorBuf));
+
+					if (g_Config.m_PdlMapinkerEnabled == 1)
+					{
+						bool NightTime = m_pClient->m_pMapInker->NightTime();
+						CMapInkerLayer *pMapInkerLayer = m_pClient->m_pMapInker->MapInkerLayer(NightTime, pGroup->m_StartLayer + l);
+
+						if (pMapInkerLayer != 0x0 && pMapInkerLayer->m_Used)
+						{
+							for (int i = 0; i < 4; i++)
+							{
+								vec4 InkedColor = mix(vec4(
+									pQuads->m_aColors[i].r / 255.0f, pQuads->m_aColors[i].g / 255.0f,
+									pQuads->m_aColors[i].b / 255.0f, pQuads->m_aColors[i].a / 255.0f),
+									pMapInkerLayer->m_Color,
+									pMapInkerLayer->m_Interpolation)
+									* 255.0f;
+
+								pQuads->m_aColors[i].r = (int)InkedColor.r;
+								pQuads->m_aColors[i].g = (int)InkedColor.g;
+								pQuads->m_aColors[i].b = (int)InkedColor.b;
+								pQuads->m_aColors[i].a = (int)InkedColor.a;
+							}
+
+							if (pMapInkerLayer->m_aExternalTexture[0] != '\0')
+								Graphics()->TextureSet(m_pClient->m_pMapInker->LayerTextureID(NightTime, pGroup->m_StartLayer + l));
+						}
+
+						
+					}
 
 					Graphics()->BlendNone();
 					RenderTools()->RenderQuads(pQuads, pQLayer->m_NumQuads, LAYERRENDERFLAG_OPAQUE, EnvelopeEval, this);
 					Graphics()->BlendNormal();
 					RenderTools()->RenderQuads(pQuads, pQLayer->m_NumQuads, LAYERRENDERFLAG_TRANSPARENT, EnvelopeEval, this);
+
+					if (g_Config.m_PdlMapinkerEnabled == 1)
+						mem_copy(pQuads->m_aColors, ColorBuf, sizeof(pQuads->m_aColors));
 				}
 
 				//layershot_end();
@@ -282,7 +335,7 @@ void CMapLayers::Render(vec2 Center, CUIRect Clip, float Zoom)
 
 void CMapLayers::Render(vec2 Center)
 {
-	Render(Center, g_Config.m_PdlZoom, false);
+	Render(Center, g_Config.m_PdlZoom / 16.0f, false);
 }
 
 void CMapLayers::RenderGamelayer(vec2 Center)
@@ -351,7 +404,7 @@ void CMapLayers::OnRender()
 		RenderGamelayer(Center);
 
 	float aPoints[4];
-	RenderTools()->MapscreenToWorld(Center.x, Center.y, 1.0f, 1.0f, 0, 0, Graphics()->ScreenAspect(), g_Config.m_PdlZoom, aPoints);
+	RenderTools()->MapscreenToWorld(Center.x, Center.y, 1.0f, 1.0f, 0, 0, Graphics()->ScreenAspect(), g_Config.m_PdlZoom / 16.0f, aPoints);
 	Graphics()->MapScreen(aPoints[0], aPoints[1], aPoints[2], aPoints[3]);
 }
 

@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <engine/graphics.h>
 #include <engine/demo.h>
 #include <game/generated/protocol.h>
@@ -148,8 +147,8 @@ void CItems::RenderPickup(const CNetObj_Pickup *pPrev, const CNetObj_Pickup *pCu
 		if(m_pClient->m_Snap.m_pGameInfoObj && !(m_pClient->m_Snap.m_pGameInfoObj->m_GameStateFlags&GAMESTATEFLAG_PAUSED))
 			s_Time += Client()->LocalTime()-s_LastLocalTime;
  	}
-	Pos.x += cosf(s_Time*2.0f+Offset)*2.5f;
-	Pos.y += sinf(s_Time*2.0f+Offset)*2.5f;
+	Pos.x += cosinusf(s_Time*2.0f+Offset)*2.5f;
+	Pos.y += sinusf(s_Time*2.0f+Offset)*2.5f;
 	s_LastLocalTime = Client()->LocalTime();
 	RenderTools()->DrawSprite(Pos.x, Pos.y, Size);
 	Graphics()->QuadsEnd();

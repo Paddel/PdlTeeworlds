@@ -1,11 +1,5 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include <new>
-#include <stdlib.h>
-#include <time.h>
 
-#include <stdlib.h> // qsort
-#include <stdarg.h>
+#include <new>
 
 #include <base/math.h>
 #include <base/system.h>
@@ -246,8 +240,6 @@ void CSmoothTime::Update(CGraph *pGraph, int64 Target, int TimeLeft, int AdjustD
 
 CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotDelta)
 {
-	srand (time(NULL));
-
 	m_pEditor = 0;
 	m_pInput = 0;
 	m_pGraphics = 0;
@@ -255,6 +247,8 @@ CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotD
 	m_pGameClient = 0;
 	m_pMap = 0;
 	m_pConsole = 0;
+
+	random_timeseet();
 
 	m_RenderFrameTime = 0.0001f;
 	m_RenderFrameTimeLow = 1.0f;
@@ -1168,7 +1162,7 @@ void CClient::ProcessConnlessPacket(CNetChunk *pPacket)
 		{
 			NETADDR Addr;
 
-			static char IPV4Mapping[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF };
+			static char IPV4Mapping[] = { '\x00', '\x00', '\x00', '\x00', '\x00', '\x00', '\x00', '\x00', '\x00', '\x00', '\xFF', '\xFF' };
 
 			// copy address
 			if(!mem_comp(IPV4Mapping, pAddrs[i].m_aIp, sizeof(IPV4Mapping)))
@@ -1393,6 +1387,7 @@ void CClient::ProcessServerPacketDummy(CNetChunk *pPacket, int Index)
 
 			CMsgPacker MsgEnter(NETMSG_ENTERGAME);
 			SendMsgDummy(&MsgEnter, MSGFLAG_VITAL | MSGFLAG_FLUSH, Index);
+			delete pPlayerInfo;
 		}
 		else if (Msg == NETMSG_PING)
 		{
@@ -2472,6 +2467,7 @@ void CClient::Run()
 	{
 		//
 		VersionUpdate();
+		GameClient()->OnTick();
 
 		// handle pending connects
 		if(m_aCmdConnect[0])
@@ -3007,6 +3003,7 @@ void CClient::ReinitWindow()
 {
 	m_pGraphics->Shutdown();
 	m_pGraphics->Init();
+	thread_sleep(100);
 	m_pGraphics->ReloadTextures();
 }
 

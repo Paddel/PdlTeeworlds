@@ -8,8 +8,8 @@
 void CMenus::RenderQuickMenu(CUIRect MainView)
 {
 	CUIRect Top, Bottom;
-	MainView.HSplitTop(100.0f, &Top, NULL);
-	MainView.HSplitBottom(64.0f, NULL, &Bottom);
+	MainView.HSplitTop(100.0f, &Top, 0x0);
+	MainView.HSplitBottom(64.0f, 0x0, &Bottom);
 
 	RenderQuickMenuTop(Top);
 	RenderQuickMenuBottom(Bottom);
@@ -32,8 +32,8 @@ void CMenus::RenderQuickMenuTop(CUIRect MainView)
 	Graphics()->QuadsEnd();
 
 	MainView.Margin(10.0f, &MainView);
-	MainView.HSplitTop(30.0f, &Button, NULL);
-	Button.VSplitLeft(128.0, &Button, NULL);
+	MainView.HSplitTop(30.0f, &Button, 0x0);
+	Button.VSplitLeft(128.0, &Button, 0x0);
 
 	static int s_DummyToggle;
 	if(DoButton_Menu(&s_DummyToggle, Client()->GetDummyActive(0)?"Disconnect":"Connect", Client()->GetDummyActive(0), &Button))
@@ -53,13 +53,13 @@ void CMenus::RenderQuickMenuBottom(CUIRect MainView)
 
 	MainView.Margin(10.0f, &MainView);
 
-	MainView.HSplitTop(30.0f, &Button, NULL);
+	MainView.HSplitTop(30.0f, &Button, 0x0);
 	static int s_Gamelayer = -1;
 	if(DoButton_CheckBox(&s_Gamelayer, "Gamelayer", g_Config.m_PdlGamelayer, &Button))
 		g_Config.m_PdlGamelayer ^= 1;
 
-	Button.HSplitTop(26.0f, NULL, &Button);
-	Button.HSplitTop(26.0f, &Button, NULL);
+	Button.HSplitTop(26.0f, 0x0, &Button);
+	Button.HSplitTop(26.0f, &Button, 0x0);
 
 	static int s_GamelayerBack = -1;
 	if(g_Config.m_PdlGamelayer)
@@ -69,8 +69,8 @@ void CMenus::RenderQuickMenuBottom(CUIRect MainView)
 	}
 
 	//move right
-	MainView.VSplitLeft(256.0f, NULL, &MainView);
-	MainView.HSplitTop(26.0f, &Button, NULL);
+	MainView.VSplitLeft(256.0f, 0x0, &MainView);
+	MainView.HSplitTop(26.0f, &Button, 0x0);
 
 	static int s_SaveJmp = -1;
 	if(DoButton_CheckBox(&s_SaveJmp, "Save jump", m_pClient->m_pControls->m_FakeInput == FAKEINPUT_SAVEJUMP, &Button))
@@ -81,8 +81,8 @@ void CMenus::RenderQuickMenuBottom(CUIRect MainView)
 			m_pClient->m_pControls->m_FakeInput = FAKEINPUT_NONE;
 	}
 
-	Button.HSplitTop(26.0f, NULL, &Button);
-	Button.HSplitTop(26.0f, &Button, NULL);
+	Button.HSplitTop(26.0f, 0x0, &Button);
+	Button.HSplitTop(26.0f, &Button, 0x0);
 
 	if(m_pClient->m_pControls->m_FakeInput == FAKEINPUT_SAVEJUMP)
 	{
@@ -92,8 +92,8 @@ void CMenus::RenderQuickMenuBottom(CUIRect MainView)
 	}
 
 	//move right
-	MainView.VSplitLeft(256.0f, NULL, &MainView);
-	MainView.HSplitTop(26.0f, &Button, NULL);
+	MainView.VSplitLeft(256.0f, 0x0, &MainView);
+	MainView.HSplitTop(26.0f, &Button, 0x0);
 
 	static int s_Autounfreeze = -1;
 	if(DoButton_CheckBox(&s_Autounfreeze, "Autounfreeze", m_pClient->m_pControls->m_FakeInput == FAKEINPUT_AUTOUNFREEZE, &Button))
@@ -104,6 +104,6 @@ void CMenus::RenderQuickMenuBottom(CUIRect MainView)
 			m_pClient->m_pControls->m_FakeInput = FAKEINPUT_NONE;
 	}
 
-	Button.HSplitTop(26.0f, NULL, &Button);
-	Button.HSplitTop(26.0f, &Button, NULL);
+	Button.HSplitTop(26.0f, 0x0, &Button);
+	Button.HSplitTop(26.0f, &Button, 0x0);
 }

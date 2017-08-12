@@ -1,10 +1,8 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <base/system.h>
 #include <base/math.h>
 #include <base/vmath.h>
 
-#include <math.h>
 #include <engine/map.h>
 #include <engine/kernel.h>
 
@@ -23,7 +21,7 @@ CCollision::CCollision()
 void CCollision::Init(class CLayers *pLayers)
 {
 	m_pLayers = pLayers;
-	if(m_pLayers->GameLayer() == NULL)
+	if(m_pLayers->GameLayer() == 0x0)
 		return;
 
 	m_Width = m_pLayers->GameLayer()->m_Width;

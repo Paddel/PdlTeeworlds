@@ -1,5 +1,5 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
+#include <base/math.h>
 #include <engine/textrender.h>
 #include <engine/shared/config.h>
 #include <game/generated/protocol.h>
@@ -9,6 +9,16 @@
 #include <game/client/animstate.h>
 #include "nameplates.h"
 #include "controls.h"
+
+static void ConKeyInputState(IConsole::IResult *pResult, void *pUserData)
+{
+	((int *)pUserData)[0] = pResult->GetInteger(0);
+}
+
+CNamePlates::CNamePlates()
+{
+	m_InputShowIds = 0;
+}
 
 void CNamePlates::RenderNameplate(
 	const CNetObj_Character *pPrevChar,
@@ -21,7 +31,7 @@ void CNamePlates::RenderNameplate(
 	CNetObj_Character Char = *pPlayerChar;
 	CNetObj_Character PrevChar = *pPrevChar;
 
-	if(pPlayerInfo->m_Local && g_Config.m_PdlNameplateOwn)
+	if(pPlayerInfo->m_Local && (g_Config.m_PdlNameplateOwn || m_InputShowIds))
 	{
 		m_pClient->m_PredictedChar.Write(&Char);
 		m_pClient->m_PredictedPrevChar.Write(&PrevChar);
@@ -38,7 +48,7 @@ void CNamePlates::RenderNameplate(
 
 		float a = 1;
 		if(g_Config.m_ClNameplatesAlways == 0)
-			a = clamp(1-powf(distance(m_pClient->m_pControls->m_TargetPos, Position)/200.0f,16.0f), 0.0f, 1.0f);
+			a = clamp(1-powerf(distance(m_pClient->m_pControls->m_TargetPos, Position)/200.0f,16.0f), 0.0f, 1.0f);
 
 		const char *pName = m_pClient->m_aClients[pPlayerInfo->m_ClientID].m_aName;
 		float tw = TextRender()->TextWidth(0, FontSize, pName, -1);
@@ -55,11 +65,12 @@ void CNamePlates::RenderNameplate(
 
 		TextRender()->Text(0, Position.x-tw/2.0f, Position.y-FontSize-38.0f, FontSize, pName, -1);
 
-		if(g_Config.m_Debug) // render client id when in debug aswell
+		if(g_Config.m_Debug || m_InputShowIds) // render client id when in debug aswell
 		{
 			char aBuf[128];
 			str_format(aBuf, sizeof(aBuf),"%d", pPlayerInfo->m_ClientID);
-			TextRender()->Text(0, Position.x, Position.y-90, 28.0f, aBuf, -1);
+			float IDTextWidth = TextRender()->TextWidth(0, 19.0f, aBuf, -1);
+			TextRender()->Text(0, Position.x - IDTextWidth / 2, Position.y-82.0f, 19.0f, aBuf, -1);
 		}
 
 		/*if(g_Config.m_PdlBlockscoreShow)
@@ -79,6 +90,18 @@ void CNamePlates::RenderNameplate(
 		TextRender()->TextColor(1,1,1,1);
 		TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, 0.3f);
 	}
+	else if(m_InputShowIds)
+	{
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf), "%d", pPlayerInfo->m_ClientID);
+		float IDTextWidth = TextRender()->TextWidth(0, 19.0f, aBuf, -1);
+		TextRender()->Text(0, Position.x - IDTextWidth / 2, Position.y - 53.0f, 19.0f, aBuf, -1);
+	}
+}
+
+void CNamePlates::OnConsoleInit()
+{
+	Console()->Register("+show_ids", "", CFGFLAG_CLIENT, ConKeyInputState, &m_InputShowIds, "Show the IDs at top of the tees");
 }
 
 void CNamePlates::OnRender()

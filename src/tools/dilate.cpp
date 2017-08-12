@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <base/system.h>
 #include <base/math.h>
 #include <engine/external/pnglite/pnglite.h>
@@ -62,6 +61,8 @@ int DilateFile(const char *pFileName)
 		return 1;
 	}
 
+	dbg_msg("dilate", pFileName);
+
 	pBuffer[0] = (CPixel*)mem_alloc(Png.width*Png.height*sizeof(CPixel), 1);
 	pBuffer[1] = (CPixel*)mem_alloc(Png.width*Png.height*sizeof(CPixel), 1);
 	pBuffer[2] = (CPixel*)mem_alloc(Png.width*Png.height*sizeof(CPixel), 1);
@@ -99,5 +100,7 @@ int main(int argc, const char **argv)
 
 	for(int i = 1; i < argc; i++)
 		DilateFile(argv[i]);
+
+	dbg_msg("dilate", "Done");
 	return 0;
 }

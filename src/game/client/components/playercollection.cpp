@@ -1,5 +1,5 @@
 
-#include <sstream>
+#include <sstream> // TODO: Remove
 
 #include <base/stringseperation.h>
 
@@ -61,13 +61,13 @@ void CPlayerCollection::OnRconLine(const char *pLine)
 	str_copy(m_pClient->m_aClients[ClientID].m_aAddr, pAddr, sizeof(m_pClient->m_aClients[ClientID].m_aAddr));
 }
 
-void CPlayerCollection::CheckResult(int index, char *pResult, int pResultSize, void *pData)
+void CPlayerCollection::CheckResult(int index, char *pResult, int pResultSize, void *pData, int Row, int MaxRows)
 {
 	CPlayerCollection *pThis = (CPlayerCollection *)pData;
 	pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, IConsole::OUTPUTTYPE_STANDARD, "PlayerCheck", pResult);
 }
 
-void CPlayerCollection::CheckGetIp(int index, char *pResult, int pResultSize, void *pData)
+void CPlayerCollection::CheckGetIp(int index, char *pResult, int pResultSize, void *pData, int Row, int MaxRows)
 {
 	CPlayerCollection *pThis = (CPlayerCollection *)pData;
 	char aIP[256];

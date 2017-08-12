@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <base/math.h>
 
 #include <engine/keys.h>
@@ -20,6 +19,8 @@
 
 #define GRENADE_DODGE_TICKS 15
 
+static int gs_TextureArrow = -1;
+
 CControls::CControls()
 {
 	mem_zero(&m_LastData, sizeof(m_LastData));
@@ -28,6 +29,12 @@ CControls::CControls()
 	m_BlockingPlayer = -1;
 	m_GrenadeDangerous = false;
 	m_InputLocked = false;
+}
+
+void CControls::OnInit()
+{
+	Graphics()->AddTextureUser(this);
+	gs_TextureArrow = Graphics()->LoadTexture("pdl_enemy_arrow.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
 }
 
 void CControls::OnReset()
@@ -186,16 +193,21 @@ int CControls::SnapInput(int *pData)
 		return 0;
 
 	if(g_Config.m_PdlFakeScoreboardOpen)
-		m_InputData.m_PlayerFlags |= 8;//scoreboard is always opened
+		m_InputData.m_PlayerFlags |= PLAYERFLAG_SCOREBOARD;//scoreboard is always opened
 
 	LastSendTime = time_get();
 	mem_copy(pData, &m_InputData, sizeof(m_InputData));
 	return sizeof(m_InputData);
 }
 
+void CControls::InitTextures()
+{
+	gs_TextureArrow = Graphics()->LoadTexture("pdl_enemy_arrow.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
+}
+
 void CControls::OnRender()
 {
-	if(Input()->KeyDown(KEY_MOUSE_3))
+	if(Input()->KeyDown(KEY_MOUSE_3) && (m_pClient->m_pChat->IsActive() == false && m_pClient->m_pMenus->IsActive() == false))
 	{
 		mem_copy(&m_LockedInput, &m_InputData, sizeof(m_LockedInput));
 		m_InputLocked = !m_InputLocked;
@@ -242,7 +254,6 @@ void CControls::OnRender()
 	if(g_Config.m_PdlGrenadeKills)
 		GrenadeKills();
 
-	static int s_TextureArrow = Graphics()->LoadTexture("pdl_enemy_arrow.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
 	if(g_Config.m_PdlBlockArrow && m_BlockingPlayer >= 0 && m_BlockingPlayer < MAX_CLIENTS 
 		&& m_pClient->m_Snap.m_aCharacters[m_BlockingPlayer].m_Active && m_pClient->m_Snap.m_LocalClientID != m_BlockingPlayer
 		&& m_pClient->m_Snap.m_pLocalCharacter && m_pClient->m_Snap.m_pLocalPrevCharacter)
@@ -264,7 +275,7 @@ void CControls::OnRender()
 			vec2 ArrowPos = LocalPos + Direction * 35.0f;
 			float Angle = GetAngle(Direction) + pi;
 
-			Graphics()->TextureSet(s_TextureArrow);
+			Graphics()->TextureSet(gs_TextureArrow);
 			Graphics()->QuadsBegin();
 			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 			Graphics()->QuadsSetRotation(Angle);
@@ -281,7 +292,7 @@ void CControls::GrenadeKills()
 	CNetObj_CharacterCore LocalChar;
 	vec2 FuturePos[GRENADE_DODGE_TICKS];
 	int LocalID = m_pClient->m_Snap.m_LocalClientID;
-	if (LocalID < 0 || LocalID >= MAX_CLIENTS || Client()->State() != IClient::STATE_ONLINE || m_pClient->m_Snap.m_pGameInfoObj == NULL || m_pClient->m_Snap.m_pLocalCharacter == NULL)
+	if (LocalID < 0 || LocalID >= MAX_CLIENTS || Client()->State() != IClient::STATE_ONLINE || m_pClient->m_Snap.m_pGameInfoObj == 0x0 || m_pClient->m_Snap.m_pLocalCharacter == 0x0)
 		return;
 
 	int LocalTeam = 0;
@@ -338,7 +349,7 @@ void CControls::GrenadeKills()
 		int DirectionID = 0;
 		for (float i = 0; i < 2 * pi; i += 0.01f, DirectionID++)
 		{
-			vec2 Direction = normalize(vec2(sinf(i), cosf(i)));
+			vec2 Direction = normalize(vec2(sinusf(i), cosinusf(i)));
 
 			for (int d = 1; d < 18; d++)
 			{
@@ -347,7 +358,7 @@ void CControls::GrenadeKills()
 				vec2 PrevPos = CalcPos(ProjStartPos, Direction, Curvature, Speed, Tick - 1 / 10.0f);
 				vec2 Pos = CalcPos(ProjStartPos, Direction, Curvature, Speed, Tick);
 
-				if (Collision()->CheckPoint(Pos.x, Pos.y))//Collision()->IntersectLine(Pos, PrevPos, NULL, NULL))
+				if (Collision()->CheckPoint(Pos.x, Pos.y))//Collision()->IntersectLine(Pos, PrevPos, 0x0, 0x0))
 					break;
 
 				for (int p = 0; p < MAX_CLIENTS; p++)
@@ -382,7 +393,7 @@ void CControls::GrenadeKills()
 		DirectionID = 0;
 		for (float i = 0; i < 2 * pi; i += 0.01f, DirectionID++)
 		{
-			vec2 Direction = normalize(vec2(sinf(i), cosf(i)));
+			vec2 Direction = normalize(vec2(sinusf(i), cosinusf(i)));
 			if (m_DirectionHit[DirectionID] == -1)
 				continue;
 
@@ -396,7 +407,7 @@ void CControls::GrenadeKills()
 				vec2 Pos = CalcPos(ProjStartPos, Direction, Curvature, Speed, Tick);
 				vec2 NextPos = CalcPos(ProjStartPos, Direction, Curvature, Speed, Tick + 1 / (50.0f*0.3f));
 
-				if (Collision()->IntersectLine(Pos, NextPos, NULL, NULL))
+				if (Collision()->IntersectLine(Pos, NextPos, 0x0, 0x0))
 					break;
 
 				IGraphics::CLineItem Line = IGraphics::CLineItem(NextPos.x, NextPos.y, Pos.x, Pos.y);
@@ -418,9 +429,9 @@ void CControls::GrenadeKills()
 		int DirectionID = 0;
 		for (float i = 0; i < 2 * pi; i += 0.01f, DirectionID++)
 		{
-			vec2 Direction = normalize(vec2(sinf(i), cosf(i)));
+			vec2 Direction = normalize(vec2(sinusf(i), cosinusf(i)));
 			vec2 EndPos = LocalPos + Direction * MaxDistance;
-			Collision()->IntersectLine(LocalPos, EndPos, NULL, &EndPos);
+			Collision()->IntersectLine(LocalPos, EndPos, 0x0, &EndPos);
 
 			for (int i = 0; i < MAX_CLIENTS; i++)
 			{
@@ -453,7 +464,7 @@ void CControls::GrenadeKills()
 		DirectionID = 0;
 		for (float i = 0; i < 2 * pi; i += 0.01f, DirectionID++)
 		{
-			vec2 Direction = normalize(vec2(sinf(i), cosf(i)));
+			vec2 Direction = normalize(vec2(sinusf(i), cosinusf(i)));
 			if (m_DirectionHit[DirectionID] == -1)
 				continue;
 
@@ -461,7 +472,7 @@ void CControls::GrenadeKills()
 			Graphics()->SetColor(1- Color, 0.1f, 0.1f, 0.75f);
 			vec2 EndPos = LocalPos + Direction * MaxDistance;
 
-			Collision()->IntersectLine(LocalPos, EndPos, NULL, &EndPos);
+			Collision()->IntersectLine(LocalPos, EndPos, 0x0, &EndPos);
 
 			IGraphics::CLineItem Line = IGraphics::CLineItem(EndPos.x, EndPos.y, LocalPos.x, LocalPos.y);
 			Graphics()->LinesDraw(&Line, 1);
@@ -568,9 +579,9 @@ void CControls::JoystickInput()
 		m_InputData.m_Direction = -1;
 
 	//mouse
-	//if(fabs(MouseAxeQX) > 0.1f)
+	//if(fabsolute(MouseAxeQX) > 0.1f)
 		m_MousePos.x = MouseAxeQX*300.0f;
-	//if(fabs(MouseAxeQY) > 0.1f)
+	//if(fabsolute(MouseAxeQY) > 0.1f)
 		m_MousePos.y = MouseAxeQY*300.0f;
 
 	ClampMousePos();
@@ -649,14 +660,14 @@ void CControls::JoystickInput()
 //		m_InputData.m_Direction = 1;
 //
 //	//mouse
-//	if(fabs(MouseAxeX) > 0.6f)
+//	if(fabsolute(MouseAxeX) > 0.6f)
 //		m_MousePos.x += MouseAxeX*JoystickSens;
-//	if(fabs(MouseAxeY) > 0.6f)
+//	if(fabsolute(MouseAxeY) > 0.6f)
 //		m_MousePos.y += MouseAxeY*JoystickSens;
 //
-//	if(fabs(MouseAxeQX) > 0.1f)
+//	if(fabsolute(MouseAxeQX) > 0.1f)
 //		m_MousePos.x = MouseAxeQX*300.0f;
-//	if(fabs(MouseAxeQY) > 0.1f)
+//	if(fabsolute(MouseAxeQY) > 0.1f)
 //		m_MousePos.y = MouseAxeQY*300.0f;
 //
 //	ClampMousePos();
@@ -744,7 +755,7 @@ void CControls::InputNormal()
 	if(m_InputLocked == true)
 	{
 		mem_copy(&m_InputData, &m_LockedInput, sizeof(m_InputData));
-		vec2 MousePos = normalize(vec2(m_LockedInput.m_TargetX, m_LockedInput.m_TargetY)) * (250 + sinf(time_get() / time_freq()) * 200);
+		vec2 MousePos = normalize(vec2(m_LockedInput.m_TargetX, m_LockedInput.m_TargetY)) * (250 + sinusf(time_get() / time_freq()) * 200);
 		m_InputData.m_TargetX = MousePos.x; m_InputData.m_TargetY = MousePos.y;
 	}
 
@@ -759,8 +770,8 @@ void CControls::InputNormal()
 		m_InputData.m_Fire = ((int)(t*10));
 		m_InputData.m_Hook = ((int)(t*2))&1;
 		m_InputData.m_WantedWeapon = ((int)t)%NUM_WEAPONS;
-		m_InputData.m_TargetX = (int)(sinf(t*3)*100.0f);
-		m_InputData.m_TargetY = (int)(cosf(t*3)*100.0f);
+		m_InputData.m_TargetX = (int)(sinusf(t*3)*100.0f);
+		m_InputData.m_TargetY = (int)(cosinusf(t*3)*100.0f);
 	}
 }
 
@@ -793,7 +804,7 @@ bool CControls::FlyCollidingTee(vec2 From, vec2 To)
 	{
 		vec2 EnemyPos;
 		CGameClient::CSnapState::CCharacterInfo EnemyChar;
-		const void *pInfo = NULL;
+		const void *pInfo = 0x0;
 
 		if(!m_pClient->m_Snap.m_aCharacters[i].m_Active || i == LocalID)
 			continue;
@@ -820,15 +831,15 @@ int CControls::FlybotGetWallPos(vec2 TeePos, vec2 *WallTop, vec2 *WallBot)
 	for(float i = 0; i < pi*0.5-0.7f; i += 0.01f)
 	{
 		vec2 TempWallPos;
-		vec2 PosTopRight = TeePos+vec2(sinf(i), cosf(i+pi))*ClosestWallTop;
-		vec2 PosTopLeft = TeePos+vec2(-sinf(i), cosf(i+pi))*ClosestWallTop;
-		vec2 PosBotRight = TeePos+vec2(sinf(i), cosf(i+2.0f*pi))*ClosestWallBot;
-		vec2 PosBotLeft = TeePos+vec2(-sinf(i), cosf(i+2.0f*pi))*ClosestWallBot;
+		vec2 PosTopRight = TeePos+vec2(sinusf(i), cosinusf(i+pi))*ClosestWallTop;
+		vec2 PosTopLeft = TeePos+vec2(-sinusf(i), cosinusf(i+pi))*ClosestWallTop;
+		vec2 PosBotRight = TeePos+vec2(sinusf(i), cosinusf(i+2.0f*pi))*ClosestWallBot;
+		vec2 PosBotLeft = TeePos+vec2(-sinusf(i), cosinusf(i+2.0f*pi))*ClosestWallBot;
 		if((FoundWalls&1) == 0 && FlyCollidingTee(TeePos, PosTopRight) == false)
 		{
-			vec2 PosTopRightEdge = TeePos+vec2(sinf(i-0.05f), cosf(i-0.05f+pi))*ClosestWallTop;//no edges
+			vec2 PosTopRightEdge = TeePos+vec2(sinusf(i-0.05f), cosinusf(i-0.05f+pi))*ClosestWallTop;//no edges
 			if(Collision()->IntersectLine(TeePos, PosTopRight, 0x0, &TempWallPos) == 1 &&
-				Collision()->IntersectLine(TeePos, PosTopRightEdge, 0x0, NULL) == 1)
+				Collision()->IntersectLine(TeePos, PosTopRightEdge, 0x0, 0x0) == 1)
 			{
 				float dist = distance(TeePos, TempWallPos);
 				if(dist < ClosestWallTop)
@@ -843,9 +854,9 @@ int CControls::FlybotGetWallPos(vec2 TeePos, vec2 *WallTop, vec2 *WallBot)
 
 		if((FoundWalls&1) == 0 && FlyCollidingTee(TeePos, PosTopLeft) == false)
 		{
-			vec2 PosTopLeftEdge = TeePos+vec2(-sinf(i-0.05f), cosf(i-0.05f))*ClosestWallTop;
+			vec2 PosTopLeftEdge = TeePos+vec2(-sinusf(i-0.05f), cosinusf(i-0.05f))*ClosestWallTop;
 			if(Collision()->IntersectLine(TeePos, PosTopLeft, 0x0, &TempWallPos) == 1 &&
-				Collision()->IntersectLine(TeePos, PosTopLeftEdge, 0x0, NULL) == 1)
+				Collision()->IntersectLine(TeePos, PosTopLeftEdge, 0x0, 0x0) == 1)
 			{
 				float dist = distance(TeePos, TempWallPos);
 				if(dist < ClosestWallTop)
@@ -989,7 +1000,7 @@ void CControls::Fly()
 		}
 		if(NewPos.x != 0.0f || NewPos.y != 0.0f)
 		{//check if we have space to hook in the new Pos
-			int Walls = FlybotGetWallPos(NewPos, NULL, NULL);
+			int Walls = FlybotGetWallPos(NewPos, 0x0, 0x0);
 			if((Walls&1) == 1)//Found Wall on top
 				m_FlyPos = NewPos;
 		}
@@ -1144,7 +1155,7 @@ void CControls::AutoUnfreeze()
 
 	int FreezeState = 0;
 
-	for(int i = 0; i < round(m_pClient->m_Tuning.m_LaserBounceDelay/20.0f); i++)//
+	for(int i = 0; i < round_to_int(m_pClient->m_Tuning.m_LaserBounceDelay/20.0f); i++)//
 	{
 		LocalChar.m_Tick++;
 		TempCore.Tick(false);
@@ -1172,7 +1183,7 @@ void CControls::AutoUnfreeze()
 
 	for(float a = 0; a < 2 * pi; a += pi/180.0f)
 	{
-		vec2 CyclePos = LocalPos + vec2(cosf(a), sinf(a)) * LaserReach;
+		vec2 CyclePos = LocalPos + vec2(cosinusf(a), sinusf(a)) * LaserReach;
 		
 		vec2 WallPos =  vec2(0, 0);
 		vec2 From = LocalPos;
@@ -1331,7 +1342,7 @@ void CControls::GrenadeDodge()
 	if (Input.m_Jump == false)
 	{
 		Input.m_Jump = true;
-		if (GrenadeWillHit(Input, NULL) == false)//jump to dodge
+		if (GrenadeWillHit(Input, 0x0) == false)//jump to dodge
 		{
 			m_InputData.m_Jump = true;
 			s_ReleaseJump = true;
@@ -1343,7 +1354,7 @@ void CControls::GrenadeDodge()
 	if (Input.m_Direction != 0)
 	{
 		Input.m_Direction = 0;
-		if (GrenadeWillHit(Input, NULL) == false)//stop moving to dodge
+		if (GrenadeWillHit(Input, 0x0) == false)//stop moving to dodge
 		{
 			m_InputData.m_Direction = 0;
 			return;
@@ -1356,7 +1367,7 @@ void CControls::GrenadeDodge()
 	if (Input.m_Direction != CurDir)
 	{
 		Input.m_Direction = CurDir;
-		if (GrenadeWillHit(Input, NULL) == false)//move right to dodge
+		if (GrenadeWillHit(Input, 0x0) == false)//move right to dodge
 		{
 			m_InputData.m_Direction = CurDir;
 			return;
@@ -1368,7 +1379,7 @@ void CControls::GrenadeDodge()
 	if (Input.m_Direction != CurDir)
 	{
 		Input.m_Direction = CurDir;
-		if (GrenadeWillHit(Input, NULL) == false)//move left to dodge
+		if (GrenadeWillHit(Input, 0x0) == false)//move left to dodge
 		{
 			m_InputData.m_Direction = CurDir;
 			return;
@@ -1406,7 +1417,7 @@ void CControls::GrenadeAim()
 			{
 				vec2 EnemyPos;
 				CGameClient::CSnapState::CCharacterInfo EnemyChar;
-				const void *pInfo = NULL;
+				const void *pInfo = 0x0;
 
 				if (!m_pClient->m_Snap.m_aCharacters[i].m_Active || i == LocalID || (isTeam && LocalTeam != m_pClient->m_Snap.m_paPlayerInfos[i]->m_Team))
 					continue;
@@ -1419,11 +1430,11 @@ void CControls::GrenadeAim()
 				if (distance(LocalPos, EnemyPos) <= 128)
 				{
 					int DirectionAngle = GetAngle(normalize(EnemyPos - LocalPos))* 180.0f / pi + 90;
-					int AngleDist = abs((MyAngle - DirectionAngle + 180) % 360 - 180);
+					int AngleDist = absolute((MyAngle - DirectionAngle + 180) % 360 - 180);
 					if (AngleDist < 40)
 					{
 						float ClosestAngleRad = (DirectionAngle - 90) * pi / 180.0f;
-						m_MousePos = vec2(cosf(ClosestAngleRad), sinf(ClosestAngleRad))*length(m_MousePos);
+						m_MousePos = vec2(cosinusf(ClosestAngleRad), sinusf(ClosestAngleRad))*length(m_MousePos);
 						Fire = true;
 						FoundVeryClosePlayer = true;
 					}
@@ -1448,13 +1459,13 @@ void CControls::GrenadeAim()
 			int DirectionID = 0;
 			for (float i = 0; i < 2 * pi; i += 0.01f, DirectionID++)
 			{
-				vec2 Direction = normalize(vec2(sinf(i), cosf(i)));
+				vec2 Direction = normalize(vec2(sinusf(i), cosinusf(i)));
 				if (m_DirectionHit[DirectionID] == -1)
 					continue;
 
 				int DirectionAngle = GetAngle(Direction)* 180.0f / pi + 90;
 
-				int AngleDist = abs((MyAngle - DirectionAngle + 180) % 360 - 180);
+				int AngleDist = absolute((MyAngle - DirectionAngle + 180) % 360 - 180);
 				if (AngleDist < ClosestAngleDist)
 				{
 					ClosestAngleDist = AngleDist;
@@ -1467,7 +1478,7 @@ void CControls::GrenadeAim()
 			if (ClosestAngleDist < 60)
 			{
 				float ClosestAngleRad = (ClosestAngle - 90) * pi / 180.0f;
-				m_MousePos = vec2(cosf(ClosestAngleRad), sinf(ClosestAngleRad))*length(m_MousePos);
+				m_MousePos = vec2(cosinusf(ClosestAngleRad), sinusf(ClosestAngleRad))*length(m_MousePos);
 				Fire = true;
 				m_InputData.m_Fire--;
 			}

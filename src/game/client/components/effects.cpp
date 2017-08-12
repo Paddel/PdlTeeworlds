@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+
 #include <engine/demo.h>
 #include <engine/engine.h>
 
@@ -135,7 +134,7 @@ void CEffects::PlayerSpawn(vec2 Pos)
 		p.SetDefault();
 		p.m_Spr = SPRITE_PART_SHELL;
 		p.m_Pos = Pos;
-		p.m_Vel = RandomDir() * (powf(frandom(), 3)*600.0f);
+		p.m_Vel = RandomDir() * (powerf(frandom(), 3)*600.0f);
 		p.m_LifeSpan = 0.3f + frandom()*0.3f;
 		p.m_StartSize = 64.0f + frandom()*32;
 		p.m_EndSize = 0;
@@ -170,7 +169,7 @@ void CEffects::PlayerDeath(vec2 Pos, int ClientID)
 	{
 		CParticle p;
 		p.SetDefault();
-		p.m_Spr = SPRITE_PART_SPLAT01 + (rand()%3);
+		p.m_Spr = SPRITE_PART_SPLAT01 + (random()%3);
 		p.m_Pos = Pos;
 		p.m_Vel = RandomDir() * ((frandom()+0.1f)*900.0f);
 		p.m_LifeSpan = 0.3f + frandom()*0.3f;

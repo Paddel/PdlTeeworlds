@@ -1,6 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include <math.h>
+
 
 #include <game/generated/client_data.h>
 
@@ -13,9 +11,6 @@
 #include <engine/storage.h>
 #include <engine/keys.h>
 #include <engine/console.h>
-
-#include <cstring>
-#include <cstdio>
 
 #include <game/client/ui.h>
 
@@ -251,7 +246,7 @@ void CGameConsole::OnReset()
 static float ConsoleScaleFunc(float t)
 {
 	//return t;
-	return sinf(acosf(1.0f-t));
+	return sinusf(acosinusf(1.0f-t));
 }
 
 struct CRenderInfo
