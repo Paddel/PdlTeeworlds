@@ -76,5 +76,8 @@ MACRO_CONFIG_INT(PdlBackgroundRays, pdl_background_rays, 1, 0, 1, CFGFLAG_CLIENT
 
 MACRO_CONFIG_INT(PdlAutoRename, pdl_auto_rename, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically updates your information if it's not synchronized with the server")
 
+MACRO_CONFIG_INT(PdlTaskFlashJoin, pdl_taskflash_join, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Flashes your taskbar when you are joining a server")
+MACRO_CONFIG_INT(PdlTaskFlashChat, pdl_taskflash_chat, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Flashes your taskbar when you get a highlighted chat message")
+
 
 #endif

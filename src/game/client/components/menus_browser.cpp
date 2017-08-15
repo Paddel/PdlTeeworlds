@@ -367,12 +367,12 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 					str_comp(pItem->m_aGameType, "CTF") == 0)
 				{
 					// pure server
-				}
-				else
-				{
-					// unpure
 					DoButton_Icon(IMAGE_BROWSEICONS, SPRITE_BROWSE_UNPURE, &Button);
 				}
+				//else
+				//{
+				//	// unpure
+				//}
 			}
 			else if(ID == COL_FLAG_FAV)
 			{
@@ -444,6 +444,14 @@ void CMenus::RenderServerbrowserServerList(CUIRect View)
 					str_format(aTemp, sizeof(aTemp), "%i/%i", pItem->m_NumClients, pItem->m_MaxClients);
 				if(g_Config.m_BrFilterString[0] && (pItem->m_QuickSearchHit&IServerBrowser::QUICK_PLAYER))
 					TextRender()->TextColor(0.4f,0.4f,1.0f,1);
+
+				if(pItem->m_MaxPlayers == 0)
+					TextRender()->TextColor(0.7f, 0.7f, 0.7f, 1);
+				else if(pItem->m_NumClients == pItem->m_MaxClients)
+					TextRender()->TextColor(1.0f, 0.7f, 0.7f, 1);
+				else
+					TextRender()->TextColor(0.7f, 1.0f, 0.7f, 1);
+
 				UI()->DoLabelScaled(&Button, aTemp, 12.0f, 1);
 				TextRender()->TextColor(1,1,1,1);
 			}
@@ -1025,8 +1033,11 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 
 	CUIRect ServerList, ToolBox, StatusBox, TabBar;
 
-	// background
-	RenderTools()->DrawUIRect(&MainView, ms_ColorTabbarActive, CUI::CORNER_ALL, 10.0f);
+	CUIRect BackBar, BackView = MainView;
+	BackView.HSplitTop(5.0f, &BackBar, &BackView);
+	RenderTools()->DrawUIRect(&BackBar, ms_ColorTabButtonChecked, CUI::CORNER_T, 2.5f);
+	RenderTools()->DrawUIRect(&BackView, ms_ColorTabbarActive, CUI::CORNER_B, 2.5f);
+
 	MainView.Margin(10.0f, &MainView);
 
 	// create server list, status box, tab bar and tool box area

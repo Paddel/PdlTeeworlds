@@ -376,8 +376,8 @@ void CScoreboard::RenderScoreboard64(float x, float y, float w, float h, const c
 			{
 				float PingFactor = 1.0f - (clamp(pInfo->m_Latency, MIN_PING, MAX_PING) / (float)MAX_PING);
 				float Hue = PingFactor * (120.0f / 360.0f);
-				float Saturation = 0.8f - 0.4f * PingFactor;
-				vec3 PingColor = HslToRgb(vec3(Hue, Saturation, 0.5f));
+				float Saturation = 0.45f;
+				vec3 PingColor = HslToRgb(vec3(Hue, Saturation, 0.75f));
 				TextRender()->TextColor(PingColor.r, PingColor.g, PingColor.b, 1.0f);
 
 				str_format(aBuf, sizeof(aBuf), "%d", clamp(pInfo->m_Latency, 0, 9999));
@@ -620,8 +620,8 @@ void CScoreboard::RenderScoreboard(float x, float y, float w, float h, int Team,
 		{
 			float PingFactor = 1.0f - (clamp(pInfo->m_Latency, MIN_PING, MAX_PING) / (float)MAX_PING);
 			float Hue = PingFactor * (120.0f / 360.0f);
-			float Saturation = 0.8f - 0.4f * PingFactor;
-			vec3 PingColor = HslToRgb(vec3(Hue, Saturation, 0.5f));
+			float Saturation = 0.45f;
+			vec3 PingColor = HslToRgb(vec3(Hue, Saturation, 0.75f));
 			TextRender()->TextColor(PingColor.r, PingColor.g, PingColor.b, 1.0f);
 
 			str_format(aBuf, sizeof(aBuf), "%d", clamp(pInfo->m_Latency, 0, 9999));

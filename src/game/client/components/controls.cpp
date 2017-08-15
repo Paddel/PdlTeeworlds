@@ -208,7 +208,7 @@ void CControls::InitTextures()
 
 void CControls::OnRender()
 {
-	if(Input()->KeyDown(KEY_MOUSE_3) && (m_pClient->m_pChat->IsActive() == false && m_pClient->m_pMenus->IsActive() == false))
+	if(Input()->KeyDown(KEY_MOUSE_3) && (m_pClient->m_pChat->IsActive() == false && m_pClient->m_pMenus->IsActive() == false) && g_Config.m_PdlInputlockActive)
 	{
 		mem_copy(&m_LockedInput, &m_InputData, sizeof(m_LockedInput));
 		m_InputLocked = !m_InputLocked;
@@ -755,9 +755,13 @@ void CControls::InputNormal()
 
 	if(m_InputLocked == true)
 	{
-		mem_copy(&m_InputData, &m_LockedInput, sizeof(m_InputData));
-		vec2 MousePos = normalize(vec2(m_LockedInput.m_TargetX, m_LockedInput.m_TargetY)) * (250 + sinusf(time_get() / time_freq()) * 200);
-		m_InputData.m_TargetX = MousePos.x; m_InputData.m_TargetY = MousePos.y;
+		if (m_pClient->m_Snap.m_pLocalInfo && m_pClient->m_Snap.m_pGameInfoObj &&
+			m_pClient->m_Snap.m_pLocalInfo->m_Team != TEAM_SPECTATORS)
+		{
+			mem_copy(&m_InputData, &m_LockedInput, sizeof(m_InputData));
+			vec2 MousePos = normalize(vec2(m_LockedInput.m_TargetX, m_LockedInput.m_TargetY)) * (250 + sinusf(time_get() / time_freq()) * 200);
+			m_InputData.m_TargetX = MousePos.x; m_InputData.m_TargetY = MousePos.y;
+		}
 	}
 
 	// stress testing

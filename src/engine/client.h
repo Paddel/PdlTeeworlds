@@ -106,6 +106,8 @@ public:
 	virtual unsigned CurrentMapCrc() = 0;
 	virtual char *CurrentMapName() = 0;
 
+	virtual int ReinitWindowCount() = 0;
+
 	// input
 	virtual int *GetInput(int Tick) = 0;
 

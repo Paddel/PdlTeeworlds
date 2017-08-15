@@ -8,6 +8,7 @@ CMapInker::CMapInker()
 {
 	m_pMapInkerLayers = 0x0;
 	m_NumLayers = 0;
+	m_LoadedMaps = 0;
 }
 
 void CMapInker::UpdateTextureID(bool Night, int Index)
@@ -125,6 +126,21 @@ void CMapInker::OnMapLoad()
 	Load();
 
 	m_LoadedMaps++;
+}
+
+void CMapInker::OnInit()
+{
+	Graphics()->AddTextureUser(this);
+}
+
+void CMapInker::InitTextures()
+{
+	if (m_NumLayers <= 0)
+		return;
+
+	for (int j = 0; j < 2; j++)
+		for(int i = 0; i < m_NumLayers; i++)
+		UpdateTextureID(j, i);
 }
 
 CMapInkerLayer *CMapInker::MapInkerLayer(bool Night, int Index)

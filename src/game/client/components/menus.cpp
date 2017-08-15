@@ -36,6 +36,7 @@ vec4 CMenus::ms_ColorTabbarInactive;
 vec4 CMenus::ms_ColorTabbarActive = vec4(0,0,0,0.5f);
 vec4 CMenus::ms_ColorTabbarInactiveIngame;
 vec4 CMenus::ms_ColorTabbarActiveIngame;
+vec4 CMenus::ms_ColorTabButtonChecked = vec4(0.0f, 0.8f, 0.6f, 0.5f);
 
 float CMenus::ms_ButtonHeight = 25.0f;
 float CMenus::ms_ListheaderHeight = 17.0f;
@@ -53,6 +54,8 @@ static int gs_TextureSpark = -1;
 static int gs_TextureAurora = -1;
 static int gs_TextureMainButton = -1;
 static int gs_TexturePaddel = -1;
+static int ms_TextureButton = -1;
+static int ms_TextureCopy = -1;
 
 static void ConKeyInputState(IConsole::IResult *pResult, void *pUserData)
 {
@@ -216,7 +219,7 @@ int CMenus::DoButton_Menu(const void *pID, const char *pText, int Checked, const
 		Graphics()->LinesEnd();
 	}
 
-	Graphics()->TextureSet(m_TextureButton);
+	Graphics()->TextureSet(ms_TextureButton);
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(Color.r,Color.g,Color.b,Color.a);
 	IGraphics::CQuadItem QuadItem(pRect->x, pRect->y, pRect->w, pRect->h);
@@ -236,7 +239,7 @@ void CMenus::DoButton_KeySelect(const void *pID, const char *pText, int Checked,
 	vec4 Color = GetButtonColor(pID, Checked);
 	RenderTools()->DrawUIRect(pRect, Color, CUI::CORNER_ALL, 2.0f);
 
-	Graphics()->TextureSet(m_TextureButton);
+	Graphics()->TextureSet(ms_TextureButton);
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(Color.r,Color.g,Color.b,Color.a);
 	IGraphics::CQuadItem QuadItem(pRect->x, pRect->y, pRect->w, pRect->h);
@@ -254,11 +257,11 @@ int CMenus::DoButton_MenuTab(const void *pID, const char *pText, int Checked, co
 {
 	vec4 Color = ms_ColorTabbarInactive;
 	if(Checked)
-		Color = ms_ColorTabbarActive;
+		Color = ms_ColorTabButtonChecked;
 
 	RenderTools()->DrawUIRect(pRect, Color, Corners, 5.0f);
 
-	Graphics()->TextureSet(m_TextureButton);
+	Graphics()->TextureSet(ms_TextureButton);
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(Color.r,Color.g,Color.b,Color.a);
 	IGraphics::CQuadItem QuadItem(pRect->x, pRect->y, pRect->w, pRect->h);
@@ -299,7 +302,7 @@ int CMenus::DoButton_CheckBox_Common(const void *pID, const char *pText, const c
 	vec4 Color = vec4(1,1,1,0.25f)*ButtonColorMul(pID);
 	RenderTools()->DrawUIRect(&c, Color, CUI::CORNER_ALL, 3.0f);
 
-	Graphics()->TextureSet(m_TextureButton);
+	Graphics()->TextureSet(ms_TextureButton);
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(Color.r,Color.g,Color.b,Color.a);
 	IGraphics::CQuadItem QuadItem(c.x, c.y, c.w, c.h);
@@ -422,7 +425,7 @@ int CMenus::DoEditBox(void *pID, const CUIRect *pRect, char *pStr, unsigned StrS
 	vec4 Color = vec4(1/255.0f, 204/255.0f, 140/255.0f, 0.5f);
 	RenderTools()->DrawUIRect(&Textbox, Color, Corners, 2.0f);
 
-	Graphics()->TextureSet(m_TextureButton);
+	Graphics()->TextureSet(ms_TextureButton);
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(Color.r,Color.g,Color.b,Color.a);
 	IGraphics::CQuadItem QuadItem(pRect->x, pRect->y, pRect->w, pRect->h);
@@ -778,20 +781,20 @@ int CMenus::RenderMenubar(CUIRect r)
 	return 0;
 }
 
-bool CMenus::Grow(float *pSrc, float To, float Speed)
-{
-	float Dist = (float)fabsolute(*pSrc - To);
-	if (Dist >= Speed*0.03f)
-	{
-		*pSrc += (Dist*Speed) * (To > *pSrc ? 1 : -1);
-		return true;
-	}
-	else
-	{
-		*pSrc = To;
-		return false;
-	}
-}
+//bool CMenus::Grow(float *pSrc, float To, float Speed)
+//{
+//	float Dist = (float)fabsolute(*pSrc - To);
+//	if (Dist >= Speed*0.03f)
+//	{
+//		*pSrc += (Dist*Speed) * (To > *pSrc ? 1 : -1);
+//		return true;
+//	}
+//	else
+//	{
+//		*pSrc = To;
+//		return false;
+//	}
+//}
 
 void CMenus::RenderLoading()
 {
@@ -905,7 +908,7 @@ void CMenus::RenderLoading()
 		Graphics()->QuadsEnd();
 		UI()->ClipDisable();
 
-		Graphics()->TextureSet(m_TextureButton);
+		Graphics()->TextureSet(ms_TextureButton);
 		Graphics()->QuadsBegin();
 		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.7f);
 		Graphics()->QuadsSetRotation(pi * 0.5f);
@@ -928,8 +931,9 @@ void CMenus::InitTextures()
 	gs_TextureSpark = Graphics()->LoadTexture("pdl_spark.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
 	gs_TextureAurora = Graphics()->LoadTexture("pdl_aurora.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
 	gs_TextureMainButton = Graphics()->LoadTexture("pdl_mainbutton.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
-	m_TextureButton = Graphics()->LoadTexture("pdl_button.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
+	ms_TextureButton = Graphics()->LoadTexture("pdl_button.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
 	gs_TexturePaddel = Graphics()->LoadTexture("pdl_Paddel.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
+	ms_TextureCopy = Graphics()->LoadTexture("pdl_copy.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
 
 	m_LoadCurrent = 0;
 }
@@ -943,10 +947,8 @@ void CMenus::OnInit()
 		m_Popup = POPUP_LANGUAGE;
 	g_Config.m_ClShowWelcome = 0;
 
-	Console()->Chain("add_favorite", ConchainServerbrowserUpdate, this);
-	Console()->Chain("remove_favorite", ConchainServerbrowserUpdate, this);
-	Console()->Chain("add_friend", ConchainFriendlistUpdate, this);
-	Console()->Chain("remove_friend", ConchainFriendlistUpdate, this);
+	IConfig *pConfig = Kernel()->RequestInterface<IConfig>();
+	pConfig->RegisterCallback(ConfigSaveCallback, this);
 
 	// setup load amount
 	m_LoadCurrent = 0;
@@ -1688,7 +1690,15 @@ bool CMenus::OnMouseMove(float x, float y)
 
 void CMenus::OnConsoleInit()
 {
+	Console()->Chain("add_favorite", ConchainServerbrowserUpdate, this);
+	Console()->Chain("remove_favorite", ConchainServerbrowserUpdate, this);
+	Console()->Chain("add_friend", ConchainFriendlistUpdate, this);
+	Console()->Chain("remove_friend", ConchainFriendlistUpdate, this);
+
 	Console()->Register("+quick", "", CFGFLAG_CLIENT, ConKeyInputState, &m_QuickActive, "Opens the Quickmenu");
+	Console()->Register("add_quickitem", "r", CFGFLAG_CLIENT, ConAddQuickitem, this, "Adds an option to the Quickmenu");
+	Console()->Register("list_quickitem", "", CFGFLAG_CLIENT, ConListQuickitem, this, "Lists all options from the Quickmenu");
+	Console()->Register("remove_quickitem", "i", CFGFLAG_CLIENT, ConRemoveQuickitem, this, "Remove an option from the Quickmenu");
 }
 
 bool CMenus::OnInput(IInput::CEvent e)
@@ -2140,7 +2150,7 @@ void CMenus::DoPaddel()
 	{
 		m_PaddelWantedPos = vec2(sw*0.5f+128.0f, sh*0.5f);
 		m_PaddelWantedSize = 128.0f;
-		m_PaddelRotation = sinusf(time_get()/(time_freq()*0.25f))*0.03f;
+		m_PaddelRotation = sinusf(time_get()/(time_freq()*0.40f))*0.03f;
 		m_PaddelVisible = true;
 
 		if(m_LastInput + time_freq() * 15.0f < time_get())

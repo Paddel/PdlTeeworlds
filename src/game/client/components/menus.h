@@ -32,11 +32,14 @@ class CMenus : public CComponent, public CTextureUser
 	static vec4 ms_ColorTabbarActiveIngame;
 	static vec4 ms_ColorTabbarInactive;
 	static vec4 ms_ColorTabbarActive;
+	static vec4 ms_ColorTabButtonChecked;
+
+	int ms_TextureButton;
+	int ms_TextureCopy;
+
 
 	vec4 GetButtonColor(const void *pID, int Checked);
 	vec4 ButtonColorMul(const void *pID);
-
-	int m_TextureButton;
 
 	int DoButton_DemoPlayer(const void *pID, const char *pText, int Checked, const CUIRect *pRect);
 	int DoButton_Sprite(const void *pID, int ImageID, int SpriteID, int Checked, const CUIRect *pRect, int Corners);
@@ -93,7 +96,7 @@ class CMenus : public CComponent, public CTextureUser
 	//static void demolist_listdir_callback(const char *name, int is_dir, void *user);
 	//static void demolist_list_callback(const CUIRect *rect, int index, void *user);
 
-	bool Grow(float *pSrc, float To, float Speed);
+	//bool Grow(float *pSrc, float To, float Speed);
 
 	enum
 	{
@@ -210,6 +213,51 @@ class CMenus : public CComponent, public CTextureUser
 	void DemolistOnUpdate(bool Reset);
 	void DemolistPopulate();
 	static int DemolistFetchCallback(const char *pName, int IsDir, int StorageType, void *pUser);
+
+	enum
+	{
+		QUICKITEM_COMMAND = 0,
+		QUICKITEM_VARINT,
+		QUICKITEM_VARSTR,
+	};
+
+	struct CQuickItem
+	{
+		char m_aScriptName[64];
+		char m_aName[64];
+		char m_aHelp[256];
+		int m_QuickItemType;
+	};
+
+	struct CQuickItemVariableStr : CQuickItem
+	{
+		int m_Length;
+		char *m_pDefault;
+		char *m_pValue;
+		~CQuickItemVariableStr() { delete m_pDefault; };
+	};
+
+	struct CQuickItemVariableInt : CQuickItem
+	{
+		int m_Default;
+		int m_Mininum;
+		int m_Maximum;
+		int *m_pValue;
+	};
+
+	struct CQuickItemCommand : CQuickItem
+	{
+		char m_aValue[256];
+	};
+
+	array<CQuickItem *> m_lQuickItem;
+
+	static void AddQuickUtemVariableInt(char *pName, char *pScriptName, int &Value, char *pDefault, char *pMin, char *pMax, char *pFlags, char *pDesc, void *pData);
+	static void AddQuickItemVariableStr(char *pName, char *pScriptName, char *pValue, char *pLength, char *pDefault, char *pFlags, char *pDesc, void *pData);
+	static void ConAddQuickitem(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveQuickitem(IConsole::IResult *pResult, void *pUserData);
+	static void ConListQuickitem(IConsole::IResult *pResult, void *pUserData);
+	static void ConfigSaveCallback(class IConfig *pConfig, void *pUserData);
 
 	// friends
 	struct CFriendItem
@@ -356,8 +404,7 @@ public:
 
 	bool m_QuickMenuLock;
 	void RenderQuickMenu(CUIRect MainView);
-	void RenderQuickMenuTop(CUIRect MainView);
-	void RenderQuickMenuBottom(CUIRect MainView);
+	void RenderQuickMenuItems(CUIRect MainView);
 	bool QuickMenuLockInput() { return m_QuickMenuLock; }
 
 	void UseMouseButtons(bool Use) { m_UseMouseButtons = Use; }

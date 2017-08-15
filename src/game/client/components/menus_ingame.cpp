@@ -26,7 +26,11 @@ void CMenus::RenderGame(CUIRect MainView)
 {
 	CUIRect Button, ButtonBar;
 	MainView.HSplitTop(45.0f, &ButtonBar, &MainView);
-	RenderTools()->DrawUIRect(&ButtonBar, ms_ColorTabbarActive, CUI::CORNER_ALL, 10.0f);
+
+	ButtonBar.HSplitTop(5.0f, &Button, &ButtonBar);
+	RenderTools()->DrawUIRect(&Button, ms_ColorTabButtonChecked, CUI::CORNER_T, 2.5f);
+	RenderTools()->DrawUIRect(&ButtonBar, ms_ColorTabbarActive, CUI::CORNER_B, 2.5f);
+	Button.HSplitTop(45.0f, &ButtonBar, 0x0);
 
 	// button bar
 	ButtonBar.HSplitTop(10.0f, 0, &ButtonBar);
@@ -111,7 +115,11 @@ void CMenus::RenderGame(CUIRect MainView)
 void CMenus::RenderPlayers(CUIRect MainView)
 {
 	CUIRect Button, ButtonBar, Options, Player;
-	RenderTools()->DrawUIRect(&MainView, ms_ColorTabbarActive, CUI::CORNER_ALL, 10.0f);
+
+	CUIRect BackBar, BackView = MainView;
+	BackView.HSplitTop(5.0f, &BackBar, &BackView);
+	RenderTools()->DrawUIRect(&BackBar, ms_ColorTabButtonChecked, CUI::CORNER_T, 2.5f);
+	RenderTools()->DrawUIRect(&BackView, ms_ColorTabbarActive, CUI::CORNER_B, 2.5f);
 
 	// player options
 	MainView.Margin(10.0f, &Options);
@@ -291,7 +299,10 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 	Client()->GetServerInfo(&CurrentServerInfo);
 
 	// render background
-	RenderTools()->DrawUIRect(&MainView, ms_ColorTabbarActive, CUI::CORNER_ALL, 10.0f);
+	CUIRect BackBar, BackView = MainView;
+	BackView.HSplitTop(5.0f, &BackBar, &BackView);
+	RenderTools()->DrawUIRect(&BackBar, ms_ColorTabButtonChecked, CUI::CORNER_T, 2.5f);
+	RenderTools()->DrawUIRect(&BackView, ms_ColorTabbarActive, CUI::CORNER_B, 2.5f);
 
 	CUIRect View, ServerInfo, GameInfo, Motd;
 
@@ -460,9 +471,14 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	// render background
 	CUIRect Bottom, Extended, TabBar, Button;
 	MainView.HSplitTop(20.0f, &Bottom, &MainView);
-	RenderTools()->DrawUIRect(&Bottom, ms_ColorTabbarActive, CUI::CORNER_T, 10.0f);
+
+	CUIRect BackBar, BackView = Bottom;
+	BackView.HSplitTop(5.0f, &BackBar, &BackView);
+	RenderTools()->DrawUIRect(&BackBar, ms_ColorTabButtonChecked, CUI::CORNER_T, 2.5f);
+	RenderTools()->DrawUIRect(&BackView, ms_ColorTabbarActive, CUI::CORNER_B, 2.5f);
+
 	MainView.HSplitTop(20.0f, &TabBar, &MainView);
-	RenderTools()->DrawUIRect(&MainView, ms_ColorTabbarActive, CUI::CORNER_B, 10.0f);
+	RenderTools()->DrawUIRect(&MainView, ms_ColorTabbarActive, CUI::CORNER_B, 2.5f);
 	MainView.Margin(10.0f, &MainView);
 	MainView.HSplitBottom(90.0f, &MainView, &Extended);
 

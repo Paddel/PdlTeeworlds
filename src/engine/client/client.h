@@ -201,6 +201,8 @@ class CClient : public IClient, public CDemoPlayer::IListner
 		class CHostLookup m_VersionServeraddr;
 	} m_VersionInfo;
 
+	int m_ReinitWindowCount;
+
 	volatile int m_GfxState;
 	static void GraphicsThreadProxy(void *pThis) { ((CClient*)pThis)->GraphicsThread(); }
 	void GraphicsThread();
@@ -324,6 +326,8 @@ public:
 	virtual int MapDownloadTotalsize() { return m_MapdownloadTotalsize; };
 	virtual unsigned CurrentMapCrc() { return m_CurrentMapCrc; };
 	virtual char *CurrentMapName() { return m_aCurrentMap; };
+
+	virtual int ReinitWindowCount() { return m_ReinitWindowCount; }
 
 	void PumpNetwork();
 

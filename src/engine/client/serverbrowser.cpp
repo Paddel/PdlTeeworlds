@@ -68,8 +68,7 @@ void CServerBrowser::SetBaseInfo(class CNetClient *pClient, const char *pNetVers
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 	m_pFriends = Kernel()->RequestInterface<IFriends>();
 	IConfig *pConfig = Kernel()->RequestInterface<IConfig>();
-	if(pConfig)
-		pConfig->RegisterCallback(ConfigSaveCallback, this);
+	pConfig->RegisterCallback(ConfigSaveCallback, this);
 }
 
 const CServerInfo *CServerBrowser::SortedGet(int Index) const

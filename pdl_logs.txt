@@ -1,0 +1,17 @@
+[5991cf08][client]: starting...
+[5991cf08][glversion]: 4.3.0 - Build 20.19.15.4549
+[5991cf08][client/sound]: sound init successful
+[5991cf08][engine/mastersrv]: refreshing master server addresses
+[5991cf08][textrender]: loaded pFont from 'data/fonts/DejaVuSans.ttf'
+[5991cf08][textrender]: default pFont set 0A773054
+[5991cf08][textrender]: loaded pFont from 'data/fonts/Bubblegum.ttf'
+[5991cf08][textrender]: bubble pFont set 0AB55054
+[5991cf0a][Database]: Connecting to localhost*paddel failed: 'Can't connect to MySQL server on 'localhost' (10061)'
+[5991cf0b][gameclient]: initialisation finished after 2973.04ms
+[5991cf0b][client]: version 0.6 626fce9a778df4d4
+[5991cf0c][engine/mastersrv]: saving addresses
+[5991cf0c][]: pFont memory usage: 524288
+[5991cf0c][Database]: Connecting to localhost*sys failed: 'Can't connect to MySQL server on 'localhost' (10061)'
+[5991cf0c][Database]: Connected to 78.47.53.206*paddel
+[5991cf0c][Database]: Connected to 31.186.250.72*teeworlds
+[5991cf0d][client]: disconnecting. reason='unknown'

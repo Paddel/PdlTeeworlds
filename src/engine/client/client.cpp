@@ -314,6 +314,7 @@ CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotD
 	m_DummyControl = -1;
 
 	m_Autojoin = false;
+	m_ReinitWindowCount = 0;
 }
 
 //dummy
@@ -3005,6 +3006,7 @@ void CClient::ReinitWindow()
 	m_pGraphics->Init();
 	thread_sleep(100);
 	m_pGraphics->ReloadTextures();
+	m_ReinitWindowCount++;
 }
 
 void CClient::FirstOpen()
@@ -3113,22 +3115,29 @@ int main(int argc, const char **argv) // ignore_convention
 	// init client's interfaces
 	pClient->InitInterfaces();
 
-	// execute config file
-	IOHANDLE File = pStorage->OpenFile("settings_pdl.cfg", IOFLAG_READ, IStorage::TYPE_ALL);
-	if(File)
-	{
-		io_close(File);
-		pConsole->ExecuteFile("settings_pdl.cfg");
-		pConsole->ExecuteFile("pdl_dummies.cfg");
-	}
-	else
-	{
-		pConsole->ExecuteFile("settings.cfg");
-		pClient->FirstOpen();
+	{// execute config file
+		IOHANDLE File = pStorage->OpenFile("settings_pdl.cfg", IOFLAG_READ, IStorage::TYPE_ALL);
+		if (File)
+		{
+			io_close(File);
+			pConsole->ExecuteFile("settings_pdl.cfg");
+			pConsole->ExecuteFile("pdl_dummies.cfg");
+		}
+		else
+		{
+			pConsole->ExecuteFile("settings.cfg");
+			pClient->FirstOpen();
+		}
 	}
 
-	// execute autoexec file
-	pConsole->ExecuteFile("autoexec.cfg");
+	{// execute autoexec file
+		IOHANDLE File = pStorage->OpenFile("autoexec.cfg", IOFLAG_READ, IStorage::TYPE_ALL);
+		if (File)
+		{
+			io_close(File);
+			pConsole->ExecuteFile("autoexec.cfg");
+		}
+	}
 
 	// parse the command line arguments
 	if(argc > 1) // ignore_convention

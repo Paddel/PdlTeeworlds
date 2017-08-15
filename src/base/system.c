@@ -2148,6 +2148,19 @@ void clipboard_set(const char *pStr, int Size)
 #endif
 }
 
+void taskbar_flash()
+{
+#ifdef CONF_FAMILY_WINDOWS
+	FLASHWINFO fi;
+	fi.cbSize = sizeof(FLASHWINFO);
+	fi.hwnd = GetActiveWindow();
+	fi.dwFlags = FLASHW_TRAY | FLASHW_TIMERNOFG;
+	fi.uCount = 0;
+	fi.dwTimeout = 0;
+	FlashWindowEx(&fi);
+#endif
+}
+
 void random_timeseet()
 {
 	srand(time(0));

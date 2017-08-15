@@ -331,7 +331,7 @@ void CChat::AddLine(int ClientID, int Team, const char *pLine)
 		(m_pClient->m_Snap.m_LocalClientID != ClientID && g_Config.m_ClShowChatFriends && !m_pClient->m_aClients[ClientID].m_Friend))))
 		return;
 
-	// trim right and set maximum length to 128 utf8-characters
+	// trim right and set maximum length to 256 utf8-characters
 	int Length = 0;
 	const char *pStr = pLine;
 	const char *pEnd = 0;
@@ -350,7 +350,7 @@ void CChat::AddLine(int ClientID, int Team, const char *pLine)
 		else if(pEnd == 0)
 			pEnd = pStrOld;
 
-		if(++Length >= 127)
+		if(++Length >= 256)
 		{
 			*(const_cast<char *>(pStr)) = 0;
 			break;
@@ -455,6 +455,9 @@ void CChat::AddLine(int ClientID, int Team, const char *pLine)
 			m_pClient->m_pSounds->Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 0);
 			m_aLastSoundPlayed[CHAT_HIGHLIGHT] = Now;
 		}
+
+		if (g_Config.m_PdlTaskFlashChat)
+			taskbar_flash();
 	}
 	else if(ClientID != -2)
 	{

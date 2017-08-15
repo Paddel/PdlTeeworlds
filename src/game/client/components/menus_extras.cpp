@@ -13,7 +13,7 @@
 #include "countryflags.h"
 #include "menus.h"
 
-#define PAGE_SIZE 72
+#define PAGE_SIZE_MAX 24 * 3
 
 CUIRect VariableButton;
 static int s_VariableIDs[1024] = { };
@@ -22,9 +22,9 @@ static CUIRect s_ResetView;
 static char *s_pLastName = 0;
 static float s_VariableOffset[1024] = { };
 
-static CIdentities::CPlayerItem s_PlayerItems[PAGE_SIZE];
+static CIdentities::CPlayerItem s_PlayerItems[PAGE_SIZE_MAX];
 static int s_NumPlayerItems;
-static int s_CopyButtonIDs[PAGE_SIZE];
+static int s_CopyButtonIDs[PAGE_SIZE_MAX];
 
 void CMenus::RenderExtrasVariableInt(char *pName, char *pScriptName, int &Value, char *pDefault, char *pMin, char *pMax, char *pFlags, char *pDesc, void *pData)
 {
@@ -61,7 +61,8 @@ void CMenus::RenderExtrasVariableInt(char *pName, char *pScriptName, int &Value,
 		float Span = str_toint(pMax) - str_toint(pMin);
 		Value = pMenu->DoScrollbarH(&s_VariableIDs[s_VariableCounter++], &VariableButton, (Value - str_toint(pMin)) / Span ) * Span + str_toint(pMin);
 		str_format(aBuf, sizeof(aBuf), "%i", Value);
-		pMenu->UI()->DoLabel(&TextRect, aBuf, 20.f, 1);
+		TextRect.x += 8.0f;
+		pMenu->UI()->DoLabel(&TextRect, aBuf, 12.0f, 1);
 
 		VariableButton.w += 36.0f;
 	}
@@ -145,6 +146,9 @@ void CMenus::RenderExtrasIdentities(CUIRect MainView)
 	static int s_SliderID = 0;
 	static char s_ConditionText[256] = { };
 
+	int Columns = (int)(MainView.w / 256.0f);
+	int PageSize = 24 * Columns;
+
 	MainView.HSplitTop(50.0f, &Top, &Button);
 	Button.VSplitLeft(8.0f, 0x0, &Button);
 
@@ -161,28 +165,35 @@ void CMenus::RenderExtrasIdentities(CUIRect MainView)
 	}
 
 	char aBuf[64];
-	str_format(aBuf, sizeof(aBuf), "Page:%i/%i", s_LastSliderValue, s_Count/PAGE_SIZE);
+	str_format(aBuf, sizeof(aBuf), "Page:%i/%i", s_LastSliderValue, s_Count/ PageSize);
 	UI()->DoLabel(&CountText, aBuf, 10.0f, 1);
 
 	int Value = 0;
 	static int64 s_RefreshTime = time_get();
-	if(s_Count > 0 && s_Count > PAGE_SIZE)
+	if(s_Count > 0 && s_Count > PageSize)
 	{
-		float Span = s_Count / PAGE_SIZE;
+		float Span = s_Count / PageSize;
 		Value = DoScrollbarH(&s_SliderID, &Slider, s_LastSliderValue / Span ) * Span + 0.1f;
 
 		if (Value != s_LastSliderValue)
 		{
 			s_RefreshTime = time_get() + time_freq() * 0.05f;
 			s_Refresh = true;
-			s_NumPlayerItems = 0;
 			s_LastSliderValue = Value;
 		}
 	}
 
+	static int s_ReinitWindowCount = Client()->ReinitWindowCount();
+	if (Client()->ReinitWindowCount() != s_ReinitWindowCount)
+	{
+		s_Refresh = true;
+		s_ReinitWindowCount = Client()->ReinitWindowCount();
+	}
+
 	if(s_Refresh && s_RefreshTime < time_get())
 	{
-		m_pClient->m_pIdentities->GetMenuIdentity(&GetMenuIdentityResult, this, Value * PAGE_SIZE, PAGE_SIZE, s_ConditionText);
+		s_NumPlayerItems = 0;
+		m_pClient->m_pIdentities->GetMenuIdentity(&GetMenuIdentityResult, this, Value * PageSize, PageSize, s_ConditionText);
 		s_Refresh = false;
 	}
 
@@ -193,7 +204,6 @@ void CMenus::RenderExtrasIdentities(CUIRect MainView)
 		if(m_pClient->PlayerOnline(s_PlayerItems[i].m_Info))
 		{
 			Graphics()->TextureSet(g_pData->m_aImages[IMAGE_BROWSEICONS].m_Id);
-
 			Graphics()->QuadsBegin();
 			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.5f);
 			RenderTools()->SelectSprite(SPRITE_BROWSE_EPSILON);
@@ -246,8 +256,7 @@ void CMenus::RenderExtrasIdentities(CUIRect MainView)
 		Line.VSplitLeft(24.0f, 0x0, &Line);
 		Line.h = 17.0f; Line.w = 14.0f;
 		static int s_PaddelButton = 0;
-		static int s_TextureCopy = Graphics()->LoadTexture("pdl_copy.png", IStorage::TYPE_ALL, CImageInfo::FORMAT_AUTO, 0);
-		if(DoButton_Texture((void*)&s_CopyButtonIDs[i], s_TextureCopy, 0, &Line))
+		if(DoButton_Texture((void*)&s_CopyButtonIDs[i], ms_TextureCopy, 0, &Line))
 		{
 			char aBuf[512];
 			m_pClient->m_pIdentities->SerializeIdentity(aBuf, sizeof(aBuf), s_PlayerItems[i]);
@@ -260,7 +269,7 @@ void CMenus::RenderExtrasIdentities(CUIRect MainView)
 		if(Button.y + 20.0f >= MainView.y + MainView.h)
 		{
 			Button.y = MainView.y + 50.0f;
-			Button.x += MainView.w / 3;
+			Button.x += MainView.w / Columns;
 		}
 	}
 }
@@ -380,8 +389,8 @@ void CMenus::RenderExtrasDummies(CUIRect MainView)
 		UI()->DoLabelScaled(&Label, pDummyInfo->m_aSkin, 14.0f, -1, 150.0f);
 
 		Label.VSplitLeft(Label.w+8, 0, &Label);
-		Label.VSplitLeft(126.0f, &Label, 0);
-		Label.HSplitTop(32.0f, &Label, 0x0);
+		Label.VSplitLeft(64.0f, &Label, 0);
+		Label.HSplitTop(16.0f, &Label, 0x0);
 		static int s_PaddelButton = 0;
 		if(DoButton_Menu((void*)&s_PaddelButton, Localize("Paddel"), 0, &Label))
 		{

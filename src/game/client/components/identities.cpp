@@ -1,5 +1,5 @@
 
-#include <base/stringseperation.h>
+#include <base/string_seperation.h>
 #include <engine/shared/config.h>
 
 #include "identities.h"
@@ -46,7 +46,7 @@ void CIdentities::SavePlayerItem(int ClientID)
 {
 	char aQuery[QUERY_MAX_STR_LEN];
 	mem_zero(&aQuery, sizeof(aQuery));
-	str_format(aQuery, sizeof(aQuery), "REPLACE INTO %s.%s(name, clan, country, skin, costumcolor, color_body, color_feet, latency) VALUES (", SCHEMA_NAME, TABLE_NAME);
+	str_format(aQuery, sizeof(aQuery), "REPLACE INTO %s.%s(name, clan, country, skin, costumcolor, color_body, color_feet, latency, date) VALUES (", SCHEMA_NAME, TABLE_NAME);
 	AddQueryStr(aQuery, m_aPlayerItems[ClientID].m_Info.m_aName, sizeof(aQuery));
 	str_append(aQuery, ", ", sizeof(aQuery));
 	AddQueryStr(aQuery, m_aPlayerItems[ClientID].m_Info.m_aClan, sizeof(aQuery));
@@ -62,7 +62,7 @@ void CIdentities::SavePlayerItem(int ClientID)
 	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Info.m_ColorFeet, sizeof(aQuery));
 	str_append(aQuery, ", ", sizeof(aQuery));
 	AddQueryInt(aQuery, m_aPlayerItems[ClientID].m_Latency, sizeof(aQuery));
-	str_append(aQuery, ");", sizeof(aQuery));
+	str_append(aQuery, ", NOW());", sizeof(aQuery));
 	QueryThread(aQuery, 0x0, 0x0);
 }
 
@@ -92,7 +92,10 @@ IGameClient::CPlayerInfo CIdentities::RandomPlayerInfo()
 
 void CIdentities::OnInit()
 {
+	char aQuery[QUERY_MAX_STR_LEN];
 	CDatabase::Init("78.47.53.206", "taschenrechner", "hades", SCHEMA_NAME);
+	str_format(aQuery, sizeof(aQuery), "CREATE TABLE IF NOT EXISTS %s (name VARCHAR(45) BINARY NOT NULL, clan VARCHAR(45), country INT DEFAULT -1, skin VARCHAR(45), customcolor INT, color_body INT, color_feet INT, latency INT, date DATETIME,  PRIMARY KEY (name)) CHARACTER SET utf8 ;", TABLE_NAME);
+	QueryThread(aQuery, 0x0, 0x0);
 }
 
 void CIdentities::OnRender()

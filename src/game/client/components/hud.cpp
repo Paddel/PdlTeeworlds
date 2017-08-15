@@ -242,17 +242,19 @@ void CHud::RenderWarmupTimer()
 	if(m_pClient->m_Snap.m_pGameInfoObj->m_WarmupTimer)
 	{
 		char Buf[256];
-		float FontSize = 20.0f;
+		float FontSize = 10.0f;
 		float w = TextRender()->TextWidth(0, FontSize, Localize("Warmup"), -1);
-		TextRender()->Text(0, 150*Graphics()->ScreenAspect()+-w/2, 50, FontSize, Localize("Warmup"), -1);
+		TextRender()->Text(0, 150*Graphics()->ScreenAspect()+-w/2, 17, FontSize, Localize("Warmup"), -1);
 
 		int Seconds = m_pClient->m_Snap.m_pGameInfoObj->m_WarmupTimer/SERVER_TICK_SPEED;
 		if(Seconds < 5)
 			str_format(Buf, sizeof(Buf), "%d.%d", Seconds, (m_pClient->m_Snap.m_pGameInfoObj->m_WarmupTimer*10/SERVER_TICK_SPEED)%10);
 		else
 			str_format(Buf, sizeof(Buf), "%d", Seconds);
+
+		FontSize = 8.0f;
 		w = TextRender()->TextWidth(0, FontSize, Buf, -1);
-		TextRender()->Text(0, 150*Graphics()->ScreenAspect()+-w/2, 75, FontSize, Buf, -1);
+		TextRender()->Text(0, 150*Graphics()->ScreenAspect()+-w/2, 27, FontSize, Buf, -1);
 	}
 }
 

@@ -10,7 +10,7 @@ struct CMapInkerLayer
 	vec4 m_Color;
 };
 
-class CMapInker : public CComponent
+class CMapInker : public CComponent, public CTextureUser
 {
 private:
 	CMapInkerLayer *m_pMapInkerLayers;
@@ -29,6 +29,9 @@ public:
 	void Load();
 
 	virtual void OnMapLoad();
+	virtual void OnInit();
+
+	virtual void InitTextures();
 
 	CMapInkerLayer *MapInkerLayer(bool Night, int Index);
 	int LayerTextureID(bool Night, int Index) { return m_pTextureIDs[CalcIndex(Night, Index)]; };

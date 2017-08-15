@@ -441,7 +441,7 @@ CMenus::CListboxItem CMenus::UiDoListboxNextItem(const void *pId, bool Selected)
 		vec4 Color = vec4(0.7f,0.7f,0.7f,0.5f);
 		RenderTools()->DrawUIRect(&r, Color, CUI::CORNER_ALL, 4.0f);
 
-		Graphics()->TextureSet(m_TextureButton);
+		Graphics()->TextureSet(ms_TextureButton);
 		Graphics()->QuadsBegin();
 		Graphics()->SetColor(Color.r,Color.g,Color.b,Color.a);
 		IGraphics::CQuadItem QuadItem(r.x, r.y, r.w, r.h);

@@ -489,6 +489,8 @@ void CGameClient::OnConnected()
 
 	m_RealClientID = -1;
 
+	if(g_Config.m_PdlTaskFlashJoin)
+		taskbar_flash();
 }
 
 void CGameClient::OnReset()

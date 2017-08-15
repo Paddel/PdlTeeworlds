@@ -1343,11 +1343,15 @@ int str_utf8_check(const char *str);
 
 int create_http_socket();
 
+
+//windows functions
 void console_hide();
 void console_show();
 
 char *clipboard_get();
 void clipboard_set(const char *pStr, int Size);
+
+void taskbar_flash();
 
 //Math
 void random_timeseet();

@@ -1,7 +1,7 @@
 
 #include <sstream> // TODO: Remove
 
-#include <base/stringseperation.h>
+#include <base/string_seperation.h>
 
 #include "playercollection.h"
 
