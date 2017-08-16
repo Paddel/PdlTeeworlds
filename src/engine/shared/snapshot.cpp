@@ -1,9 +1,10 @@
 
+#include <iostream>
+
 #include "snapshot.h"
 #include "compression.h"
 
 // CSnapshot
-
 CSnapshotItem *CSnapshot::GetItem(int Index)
 {
 	return (CSnapshotItem *)(DataStart() + Offsets()[Index]);
@@ -25,6 +26,62 @@ int CSnapshot::GetItemIndex(int Key)
 			return i;
 	}
 	return -1;
+}
+
+int CSnapshot::Add(CSnapshot *pFrom)
+{
+	CSnapshotBuilder Builder;
+	Builder.Init();
+
+	for (int i = 0; i < m_NumItems; i++)
+	{
+		CSnapshotItem *pItem = GetItem(i);
+		int ItemSize = GetItemSize(i);
+		mem_copy(
+			Builder.NewItem(pItem->Type(), pItem->ID(), ItemSize),
+			pItem->Data(), ItemSize);
+
+	}
+
+	for (int i = 0; i < pFrom->m_NumItems; i++)
+	{
+		CSnapshotItem *pItem = pFrom->GetItem(i);
+		if (GetItemIndex(pItem->Key()) != -1)
+			continue;
+	
+		int ItemSize = pFrom->GetItemSize(i);
+		mem_copy(
+			Builder.NewItem(pItem->Type(), pItem->ID(), ItemSize),
+			pItem->Data(), ItemSize);
+
+		/*dbg_msg(0, "found an item! type=%i id=%i size=%i fullsize=%i/%i typid=%i",
+			pItem->Type(), pItem->ID(), ItemSize, m_DataSize, MAX_SIZE, pItem->m_TypeAndID);*/
+
+	}
+
+	int DeltaItems = Builder.NumItems() - m_NumItems;
+	int OldSize = m_DataSize;
+	int NewSize = Builder.Finish(this);
+	//dbg_msg(0, "added size=%i items=%i", NewSize - OldSize, DeltaItems);
+	return NewSize;
+}
+
+int CSnapshot::Copy(CSnapshot *pFrom)
+{
+	CSnapshotBuilder Builder;
+	Builder.Init();
+
+	for (int i = 0; i < pFrom->m_NumItems; i++)
+	{
+		CSnapshotItem *pItem = pFrom->GetItem(i);
+		int ItemSize = pFrom->GetItemSize(i);
+		mem_copy(
+			Builder.NewItem(pItem->Type(), pItem->ID(), ItemSize),
+			pItem->Data(), ItemSize);
+
+	}
+
+	return Builder.Finish(this);
 }
 
 int CSnapshot::Crc()
@@ -340,7 +397,7 @@ int CSnapshotDelta::UnpackDelta(CSnapshot *pFrom, CSnapshot *pTo, void *pSrcData
 		}
 		m_SnapshotCurrent = Type;
 
-		if(RangeCheck(pEnd, pData, ItemSize) || ItemSize < 0) return -3;
+		if (RangeCheck(pEnd, pData, ItemSize) || ItemSize < 0) return -3;
 
 		Key = (Type<<16)|ID;
 

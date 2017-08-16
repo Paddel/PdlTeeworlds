@@ -266,7 +266,7 @@ void CHud::RenderDummyCam()
 
 	CUIRect Rect; Rect.x = 8.0f; Rect.y = 8.0f; Rect.w = 200.0f; Rect.h = 200.0f;
 	vec2 Center = m_pClient->m_pCamera->m_Center;
-	int SpecID = m_pClient->m_aDummyData[DummyCam].m_ClientID;
+	int SpecID = Client()->GetDummyClientID(DummyCam);
 	if(Client()->GetDummyControl() != -1)
 		SpecID = m_pClient->m_RealClientID;
 

@@ -385,9 +385,9 @@ void CGameClient::HandleDummyAutorun()
 	}*/
 
 	int DummyCam = 0;//Client()->GetDummyCam();
-	if(/*g_Config.m_PdlDummyCam != 0 &&*/ m_aDummyData[DummyCam].m_ClientID != -1 && Client()->IsDDRace())
+	if(/*g_Config.m_PdlDummyCam != 0 &&*/ Client()->GetDummyClientID(DummyCam) != -1 && Client()->IsDDRace())
 	{
-		int SpecID = m_aDummyData[DummyCam].m_ClientID;
+		int SpecID = Client()->GetDummyClientID(DummyCam);
 		bool Swap = Client()->GetDummyControl() == DummyCam;
 		if(Swap)
 			SpecID = m_RealClientID;
@@ -483,9 +483,6 @@ void CGameClient::OnConnected()
 
 	//for 64 player support
 	Client()->Rcon("crashmeplx");
-
-	for (int i = 0; i < MAX_DUMMIES; i++)
-		m_aDummyData[i].m_ClientID = -1;
 
 	m_RealClientID = -1;
 
@@ -736,6 +733,7 @@ void CGameClient::OnRender()
 
 void CGameClient::HandleShowAll()
 {
+	return;
 	if (ShowAllPlayers() != m_LastShowAll && m_LastShowAllUpdate < time_get() && Client()->IsDDRace())
 	{
 		CNetMsg_Cl_Say Msg;
@@ -1068,8 +1066,8 @@ void CGameClient::OnNewSnapshot()
 					int DummyControl = Client()->GetDummyControl();
 					if (DummyControl == -1)
 						m_RealClientID = Item.m_ID;
-					else
-						m_aDummyData[DummyControl].m_ClientID = Item.m_ID;
+					/*else
+						m_aDummyData[DummyControl].m_ClientID = Item.m_ID;*/
 
 					if(pInfo->m_Team == TEAM_SPECTATORS)
 					{
@@ -1431,7 +1429,7 @@ IGameClient::CPlayerInfo *CGameClient::GetDummyJoinInfo(int Dummy)
 
 void CGameClient::OnDummyOnJoin(int Dummy)
 {
-	m_aDummyData[Dummy].m_ClientID = -1;
+	//m_aDummyData[Dummy].m_ClientID = -1;
 	mem_zero(&m_aDummyData[Dummy].m_InputData, sizeof(m_aDummyData[Dummy].m_InputData));
 }
 
@@ -1443,8 +1441,8 @@ void CGameClient::OnDummyOnMain(int Dummy)
 	m_LastSendInfo = 0;
 
 	int Buf = m_RealClientID;
-	m_RealClientID = m_Snap.m_LocalClientID = m_aDummyData[Dummy].m_ClientID;
-	m_aDummyData[Dummy].m_ClientID = Buf;
+	m_RealClientID = m_Snap.m_LocalClientID = Client()->GetDummyClientID(Dummy);
+	//m_aDummyData[Dummy].m_ClientID = Buf;
 }
 
 bool CGameClient::PlayerOnline(CPlayerInfo &Info)

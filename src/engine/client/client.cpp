@@ -299,6 +299,7 @@ CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotD
 
 	mem_zero(m_aSnapshots, sizeof(m_aSnapshots));
 	m_SnapshotStorage.Init();
+	m_SnapshotStorageMixed.Init();
 	m_RecivedSnapshots = 0;
 
 	m_VersionInfo.m_State = CVersionInfo::STATE_INIT;
@@ -308,6 +309,7 @@ CClient::CClient() : m_DemoPlayer(&m_SnapshotDelta), m_DemoRecorder(&m_SnapshotD
 		m_aDummy[i].m_Online = false;
 		m_aDummy[i].m_Inited = false;
 		m_aDummy[i].m_LastConnect = 0;
+		m_aDummy[i].m_SnapshotStorage.Init();
 	}
 
 	m_DummyCamera = -1;
@@ -333,6 +335,12 @@ void CClient::DummyConnect(int Index)
 {
 	if(Index < 0 || Index >= MAX_DUMMIES || m_aDummy[Index].m_Online)
 		return;
+
+	m_aDummy[Index].m_SnapshotParts = 0;
+	m_aDummy[Index].m_RecivedSnapshots = 0;
+	m_aDummy[Index].m_SnapshotStorage.PurgeAll();
+	m_aDummy[Index].m_CurrentRecvTick;
+	m_aDummy[Index].m_ClientID = -1;
 
 	if(m_aDummy[Index].m_Inited == false)
 	{
@@ -693,6 +701,7 @@ void CClient::OnEnterGame()
 	m_aSnapshots[SNAP_CURRENT] = 0;
 	m_aSnapshots[SNAP_PREV] = 0;
 	m_SnapshotStorage.PurgeAll();
+	m_SnapshotStorageMixed.PurgeAll();
 	m_RecivedSnapshots = 0;
 	m_SnapshotParts = 0;
 	m_PredTick = 0;
@@ -865,17 +874,35 @@ void CClient::SnapInvalidateItem(int SnapID, int Index)
 void *CClient::SnapFindItem(int SnapID, int Type, int ID)
 {
 	// TODO: linear search. should be fixed.
-	int i;
 
 	if(!m_aSnapshots[SnapID])
 		return 0x0;
 
-	for(i = 0; i < m_aSnapshots[SnapID]->m_pSnap->NumItems(); i++)
+	for(int i = 0; i < m_aSnapshots[SnapID]->m_pSnap->NumItems(); i++)
 	{
 		CSnapshotItem *pItem = m_aSnapshots[SnapID]->m_pAltSnap->GetItem(i);
 		if(pItem->Type() == Type && pItem->ID() == ID)
 			return (void *)pItem->Data();
 	}
+
+	/*for (int j = 0; j < MAX_DUMMIES; j++)
+	{
+		if (m_aDummy[j].m_Online && m_aDummy[j].m_RecivedSnapshots >= 3)
+		{
+			CSnapshotStorage::CHolder *pDummySnapshot;
+			if(SnapID == SNAP_CURRENT)
+				pDummySnapshot = m_aDummy[j].m_SnapshotStorage.m_pLast;
+			else if(SnapID == SNAP_PREV)
+				pDummySnapshot = m_aDummy[j].m_SnapshotStorage.m_pFirst;
+
+			for (int i = 0; i < pDummySnapshot->m_pSnap->NumItems(); i++)
+			{
+				CSnapshotItem *pItem = pDummySnapshot->m_pAltSnap->GetItem(i);
+				if (pItem->Type() == Type && pItem->ID() == ID)
+					return (void *)pItem->Data();
+			}
+		}
+	}*/
 	return 0x0;
 }
 
@@ -890,6 +917,8 @@ int CClient::SnapNumItems(int SnapID)
 void CClient::SnapSetStaticsize(int ItemType, int Size)
 {
 	m_SnapshotDelta.SetStaticsize(ItemType, Size);
+	for(int i = 0; i < MAX_DUMMIES; i++)
+		m_aDummy[i].m_SnapshotDelta.SetStaticsize(ItemType, Size);
 }
 
 
@@ -1395,13 +1424,13 @@ void CClient::ProcessServerPacketDummy(CNetChunk *pPacket, int Index)
 			CMsgPacker Msg(NETMSG_PING_REPLY);
 			SendMsgEx(&Msg, 0);
 		}
-		else if (Msg == NETMSG_SNAPEMPTY)
+		/*else if (Msg == NETMSG_SNAPEMPTY)
 		{
 			int Token = Unpacker.GetInt();
 			CMsgPacker Msg(NETMSG_INPUT);
 			Msg.AddInt(Token);
 			SendMsgDummy(&Msg, MSGFLAG_VITAL | MSGFLAG_FLUSH, Index);
-		}
+		}*/
 		else if (Msg == NETMSG_RCON_AUTH_STATUS)
 		{
 
@@ -1414,7 +1443,246 @@ void CClient::ProcessServerPacketDummy(CNetChunk *pPacket, int Index)
 		{
 		}
 		else if (Msg == NETMSG_INPUTTIMING)
-		{		
+		{
+		}
+		else if (Msg == NETMSG_SNAP || Msg == NETMSG_SNAPSINGLE || Msg == NETMSG_SNAPEMPTY)
+		{
+			int NumParts = 1;
+			int Part = 0;
+			int GameTick = Unpacker.GetInt();
+			int DeltaTick = GameTick - Unpacker.GetInt();
+			int PartSize = 0;
+			int Crc = 0;
+			int CompleteSize = 0;
+			const char *pData = 0;
+
+			// should not happen
+			if (State() < IClient::STATE_LOADING)
+				return;
+
+			if (Msg == NETMSG_SNAP)
+			{
+				NumParts = Unpacker.GetInt();
+				Part = Unpacker.GetInt();
+			}
+
+			if (Msg != NETMSG_SNAPEMPTY)
+			{
+				Crc = Unpacker.GetInt();
+				PartSize = Unpacker.GetInt();
+			}
+			else
+			{
+				if (m_aDummy[Index].m_RecivedSnapshots == 0)
+				{
+					CMsgPacker Msg(NETMSG_INPUT);
+					Msg.AddInt(GameTick);
+					SendMsgDummy(&Msg, MSGFLAG_VITAL | MSGFLAG_FLUSH, Index);
+					return;
+				}
+			}
+
+			pData = (const char *)Unpacker.GetRaw(PartSize);
+
+			if (Unpacker.Error())
+				return;
+
+			if (GameTick >= m_aDummy[Index].m_CurrentRecvTick)
+			{
+				if (GameTick != m_aDummy[Index].m_CurrentRecvTick)
+				{
+					m_aDummy[Index].m_SnapshotParts = 0;
+					m_aDummy[Index].m_CurrentRecvTick = GameTick;
+				}
+
+				mem_copy((char*)m_aDummy[Index].m_aSnapshotIncommingData + Part*MAX_SNAPSHOT_PACKSIZE, pData, PartSize);
+				m_aDummy[Index].m_SnapshotParts |= 1 << Part;
+
+				if (m_aDummy[Index].m_SnapshotParts == (unsigned)((1 << NumParts) - 1))
+				{
+					static CSnapshot Emptysnap;
+					CSnapshot *pDeltaShot = &Emptysnap;
+					int PurgeTick;
+					void *pDeltaData;
+					int DeltaSize;
+					unsigned char aTmpBuffer2[CSnapshot::MAX_SIZE];
+					unsigned char aTmpBuffer3[CSnapshot::MAX_SIZE];
+					unsigned char aTmpBuffer4[CSnapshot::MAX_SIZE];
+					CSnapshot *pTmpBuffer3 = (CSnapshot*)aTmpBuffer3;	// Fix compiler warning for strict-aliasing
+					CSnapshot *pTmpBuffer4 = (CSnapshot*)aTmpBuffer3;
+					int SnapSize;
+					int SnapSizeMixed;
+
+					CompleteSize = (NumParts - 1) * MAX_SNAPSHOT_PACKSIZE + PartSize;
+
+					// reset snapshoting
+					m_aDummy[Index].m_SnapshotParts = 0;
+
+					// find snapshot that we should use as delta
+					Emptysnap.Clear();
+
+					// find delta
+					if (DeltaTick >= 0)
+					{
+						int DeltashotSize = m_aDummy[Index].m_SnapshotStorage.Get(DeltaTick, 0, &pDeltaShot, 0);
+
+						if (DeltashotSize < 0)
+						{
+							// couldn't find the delta snapshots that the server used
+							// to compress this snapshot. force the server to resync
+							if (g_Config.m_Debug)
+							{
+								char aBuf[256];
+								str_format(aBuf, sizeof(aBuf), "error, couldn't find the delta snapshot");
+								m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, IConsole::OUTPUTTYPE_ERROR, "dummy", aBuf);
+							}
+
+							// ack snapshot
+							// TODO: combine this with the input message
+							//m_AckGameTick = -1;
+							return;
+						}
+					}
+
+					// decompress snapshot
+					pDeltaData = m_aDummy[Index].m_SnapshotDelta.EmptyDelta();
+					DeltaSize = sizeof(int) * 3;
+
+					if (CompleteSize)
+					{
+						int IntSize = CVariableInt::Decompress(m_aDummy[Index].m_aSnapshotIncommingData, CompleteSize, aTmpBuffer2);
+
+						if (IntSize < 0) // failure during decompression, bail
+							return;
+
+						pDeltaData = aTmpBuffer2;
+						DeltaSize = IntSize;
+					}
+
+					// unpack delta
+					SnapSize = m_aDummy[Index].m_SnapshotDelta.UnpackDelta(pDeltaShot, pTmpBuffer3, pDeltaData, DeltaSize);
+					if (SnapSize < 0)
+					{
+						m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, IConsole::OUTPUTTYPE_ERROR, "dummy", "delta unpack failed!");
+						return;
+					}
+
+					if (Msg != NETMSG_SNAPEMPTY && pTmpBuffer3->Crc() != Crc)
+					{
+						if (g_Config.m_Debug)
+						{
+							char aBuf[256];
+							str_format(aBuf, sizeof(aBuf), "snapshot crc error #%d - tick=%d wantedcrc=%d gotcrc=%d compressed_size=%d delta_tick=%d",
+								m_aDummy[Index].m_SnapCrcErrors, GameTick, Crc, pTmpBuffer3->Crc(), CompleteSize, DeltaTick);
+							m_pConsole->Print(IConsole::OUTPUT_LEVEL_DEBUG, IConsole::OUTPUTTYPE_ERROR, "dummy", aBuf);
+						}
+
+						m_aDummy[Index].m_SnapCrcErrors++;
+						if (m_aDummy[Index].m_SnapCrcErrors > 10)
+						{
+							// to many errors, send reset
+							CMsgPacker Msg(NETMSG_INPUT);
+							Msg.AddInt(-1);
+							SendMsgDummy(&Msg, MSGFLAG_VITAL | MSGFLAG_FLUSH, Index);
+
+							m_aDummy[Index].m_CurrentRecvTick = -1;
+							m_aDummy[Index].m_SnapCrcErrors = 0;
+						}
+						return;
+					}
+					else
+					{
+						if (m_aDummy[Index].m_SnapCrcErrors)
+							m_aDummy[Index].m_SnapCrcErrors--;
+					}
+
+					// purge old snapshots
+					PurgeTick = DeltaTick;
+					if (m_aSnapshots[SNAP_PREV] && m_aSnapshots[SNAP_PREV]->m_Tick < PurgeTick)
+						PurgeTick = m_aSnapshots[SNAP_PREV]->m_Tick;
+					if (m_aSnapshots[SNAP_CURRENT] && m_aSnapshots[SNAP_CURRENT]->m_Tick < PurgeTick)
+						PurgeTick = m_aSnapshots[SNAP_CURRENT]->m_Tick;
+					m_aDummy[Index].m_SnapshotStorage.PurgeUntil(PurgeTick);
+					//m_SnapshotStorageMixed.PurgeUntil(PurgeTick);
+
+					SnapSizeMixed = SnapSize;
+					pTmpBuffer4->Copy(pTmpBuffer3);
+
+					//if (m_aDummy[0].m_Online && m_aDummy[0].m_RecivedSnapshots >= 3)
+					{
+						//if (m_aDummy[0].m_CurrentRecvTick > m_CurrentRecvTick)
+						{
+							/*CSnapshotStorage::CHolder *pDummySnapshot = m_SnapshotStorage.m_pLast;
+							SnapSizeMixed = pTmpBuffer4->Add(pDummySnapshot->m_pSnap);*/
+						}
+					}
+
+					// add new
+					m_aDummy[Index].m_SnapshotStorage.Add(GameTick, time_get(), SnapSize, pTmpBuffer3, 1);
+
+					//update playerinfo
+					m_aDummy[Index].m_ClientID = -1;
+					for (int i = 0; i < pTmpBuffer3->NumItems(); i++)
+					{
+						CSnapshotItem *pItem = pTmpBuffer4->GetItem(i);
+						if (pItem->Type() != NETOBJTYPE_PLAYERINFO)
+							continue;
+						
+						CNetObj_PlayerInfo *pPlayerInfo = (CNetObj_PlayerInfo *)pItem->Data();
+						if (pPlayerInfo->m_Local == 0)
+							continue;
+
+						m_aDummy[Index].m_ClientID = pItem->ID();
+						//pPlayerInfo->m_Local = 0;
+						break;
+					}
+
+					//m_SnapshotStorageMixed.Add(GameTick, time_get(), SnapSizeMixed, pTmpBuffer4, 1);
+
+					if (m_aDummy[Index].m_ClientID < 0 || m_aDummy[Index].m_ClientID >= MAX_CLIENTS)
+						m_aDummy[Index].m_ClientID = -1;
+
+					//dbg_msg(0, "%i", m_aDummy[Index].m_ClientID);
+
+					// add snapshot to demo
+					//if (m_DemoRecorder.IsRecording())
+					//{
+					//	// write snapshot
+					//	m_DemoRecorder.RecordSnapshot(GameTick, pTmpBuffer3, SnapSize);
+					//}
+
+					// apply snapshot, cycle pointers
+					m_aDummy[Index].m_RecivedSnapshots++;
+
+					m_aDummy[Index].m_CurrentRecvTick = GameTick;
+
+					// we got two snapshots until we see us self as connected
+					//if (m_aDummy[Index].m_RecivedSnapshots == 2)
+					//{
+					//	// start at 200ms and work from there
+					//	m_PredictedTime.Init(GameTick*time_freq() / 50);
+					//	m_PredictedTime.SetAdjustSpeed(1, 1000.0f);
+					//	m_GameTime.Init((GameTick - 1)*time_freq() / 50);
+					//	m_aSnapshots[SNAP_PREV] = m_SnapshotStorage.m_pFirst;
+					//	m_aSnapshots[SNAP_CURRENT] = m_SnapshotStorage.m_pLast;
+					//	m_LocalStartTime = time_get();
+					//	SetState(IClient::STATE_ONLINE);
+					//	DemoRecorder_HandleAutoStart();
+					//}
+
+					// adjust game time
+					/*if (m_RecivedSnapshots > 2)
+					{
+						int64 Now = m_GameTime.Get(time_get());
+						int64 TickStart = GameTick*time_freq() / 50;
+						int64 TimeLeft = (TickStart - Now) * 1000 / time_freq();
+						m_GameTime.Update(&m_GametimeMarginGraph, (GameTick - 1)*time_freq() / 50, TimeLeft, 0);
+					}*/
+
+					// ack snapshot
+					//m_AckGameTick = GameTick;
+				}
+			}
 		}
 	}
 	//else
@@ -1697,8 +1965,11 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket)
 					int DeltaSize;
 					unsigned char aTmpBuffer2[CSnapshot::MAX_SIZE];
 					unsigned char aTmpBuffer3[CSnapshot::MAX_SIZE];
+					unsigned char aTmpBuffer4[CSnapshot::MAX_SIZE];
 					CSnapshot *pTmpBuffer3 = (CSnapshot*)aTmpBuffer3;	// Fix compiler warning for strict-aliasing
+					CSnapshot *pTmpBuffer4 = (CSnapshot*)aTmpBuffer4;
 					int SnapSize;
+					int SnapSizeMixed;
 
 					CompleteSize = (NumParts-1) * MAX_SNAPSHOT_PACKSIZE + PartSize;
 
@@ -1787,9 +2058,25 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket)
 					if(m_aSnapshots[SNAP_CURRENT] && m_aSnapshots[SNAP_CURRENT]->m_Tick < PurgeTick)
 						PurgeTick = m_aSnapshots[SNAP_CURRENT]->m_Tick;
 					m_SnapshotStorage.PurgeUntil(PurgeTick);
+					m_SnapshotStorageMixed.PurgeUntil(PurgeTick);
+					SnapSizeMixed = SnapSize;
+					//mem_copy(aTmpBuffer4, aTmpBuffer3, sizeof(aTmpBuffer4));
+					pTmpBuffer4->Copy(pTmpBuffer3);
+
+					if (m_aDummy[0].m_Online && m_aDummy[0].m_RecivedSnapshots >= 3)
+					{
+						//if (m_aDummy[0].m_CurrentRecvTick > m_CurrentRecvTick)
+						{
+							CSnapshotStorage::CHolder *pDummySnapshot = m_aDummy[0].m_SnapshotStorage.m_pLast;
+							SnapSizeMixed = pTmpBuffer4->Add(pDummySnapshot->m_pSnap);
+							//m_SnapshotStorageMixed.m_pLast->m_Tick = m_aDummy[0].m_SnapshotStorage.m_pLast->m_Tick;
+							//m_SnapshotStorageMixed.m_pFirst->m_Tick = m_aDummy[0].m_SnapshotStorage.m_pFirst->m_Tick;
+						}
+					}
 
 					// add new
 					m_SnapshotStorage.Add(GameTick, time_get(), SnapSize, pTmpBuffer3, 1);
+					m_SnapshotStorageMixed.Add(GameTick, time_get(), SnapSizeMixed, pTmpBuffer4, 1);
 
 					// add snapshot to demo
 					if(m_DemoRecorder.IsRecording())
@@ -2181,6 +2468,24 @@ void CClient::Update()
 		int64 Now = m_GameTime.Get(time_get());
 		int64 PredNow = m_PredictedTime.Get(time_get());
 
+		//if (m_aDummy[0].m_Online && m_aDummy[0].m_RecivedSnapshots >= 3)
+		//{
+		//	//if (m_aDummy[0].m_CurrentRecvTick > m_CurrentRecvTick)
+		//	{
+		//		//dbg_msg(0, "dummy");
+
+
+		//		CSnapshotStorage::CHolder *pDummySnapshot = m_aDummy[0].m_SnapshotStorage.m_pLast;
+		//		CSnapshotStorage::CHolder *pMainSnapshot = m_aSnapshots[SNAP_CURRENT];
+		//		pMainSnapshot->m_pAltSnap->Fusion(pDummySnapshot->m_pAltSnap);
+		//		/*int Delta = m_SnapshotDelta.UnpackDelta(pDummySnapshot->m_pAltSnap, pMainSnapshot->m_pAltSnap, pDummySnapshot->m_pAltSnap->DataStart(), pDummySnapshot->m_pAltSnap->DataSize());
+		//		dbg_msg(0, "Delta %i", Delta);*/
+		//	}
+		//	/*else
+		//		dbg_msg(0, "main");*/
+
+		//}
+
 		while(1)
 		{
 			CSnapshotStorage::CHolder *pCur = m_aSnapshots[SNAP_CURRENT];
@@ -2203,6 +2508,8 @@ void CClient::Update()
 						GameClient()->OnNewSnapshot();
 						Repredict = 1;
 					}
+
+					//dbg_msg(0, "n");
 				}
 				else
 					break;

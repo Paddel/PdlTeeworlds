@@ -181,7 +181,7 @@ public:
 	struct
 	{
 		CPlayerInfo m_PlayerInfo;
-		int m_ClientID;
+		//int m_ClientID;
 		CNetObj_PlayerInput m_InputData;
 
 		//	int m_SnappedID;

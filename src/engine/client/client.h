@@ -172,6 +172,7 @@ class CClient : public IClient, public CDemoPlayer::IListner
 	CGraph m_FpsGraph;
 
 	// the game snapshots are modifiable by the game
+	class CSnapshotStorage m_SnapshotStorageMixed;
 	class CSnapshotStorage m_SnapshotStorage;
 	CSnapshotStorage::CHolder *m_aSnapshots[NUM_SNAPSHOT_TYPES];
 
@@ -268,6 +269,15 @@ public:
 		bool m_Online;
 		int64 m_LastConnect;
 
+		int m_SnapshotParts;
+		char m_aSnapshotIncommingData[CSnapshot::MAX_SIZE];
+		int m_RecivedSnapshots;
+		class CSnapshotStorage m_SnapshotStorage;
+		class CSnapshotDelta m_SnapshotDelta;
+		int m_SnapCrcErrors;
+		int m_CurrentRecvTick;
+		int m_ClientID;
+
 	} m_aDummy[MAX_DUMMIES];
 
 	int m_DummyCamera;
@@ -281,6 +291,7 @@ public:
 	virtual void DummyOnMain(int Index);
 	virtual int GetDummyCam() { return m_DummyCamera; }
 	virtual int GetDummyActive(int Dummy) { return m_aDummy[Dummy].m_Online; }
+	virtual int GetDummyClientID(int Dummy) { return m_aDummy[Dummy].m_ClientID; }
 	virtual int GetDummyControl() { return m_DummyControl; }
 	void SaveDummyInfos();
 

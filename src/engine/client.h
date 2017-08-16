@@ -135,6 +135,7 @@ public:
 	virtual void DummyDisonnect(int Index) = 0;
 	virtual int GetDummyCam() = 0;
 	virtual int GetDummyActive(int Dummy) = 0;
+	virtual int GetDummyClientID(int Dummy) = 0;
 	virtual int GetDummyControl() = 0;
 
 	// TODO: Refactor: should redo this a bit i think, too many virtual calls

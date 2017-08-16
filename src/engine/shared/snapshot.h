@@ -20,17 +20,18 @@ public:
 
 class CSnapshot
 {
+public:
 	friend class CSnapshotBuilder;
 	int m_DataSize;
 	int m_NumItems;
 
-	int *Offsets() const { return (int *)(this+1); }
-	char *DataStart() const { return (char*)(Offsets()+m_NumItems); }
+	int *Offsets() const { return (int *)(this + 1); }
+	char *DataStart() const { return (char*)(Offsets() + m_NumItems); }
 
 public:
 	enum
 	{
-		MAX_SIZE=64*1024
+		MAX_SIZE = (64 + 0) * 1024
 	};
 
 	void Clear() { m_DataSize = 0; m_NumItems = 0; }
@@ -38,6 +39,9 @@ public:
 	CSnapshotItem *GetItem(int Index);
 	int GetItemSize(int Index);
 	int GetItemIndex(int Key);
+	int Add(CSnapshot *pFrom);
+	int Copy(CSnapshot *pFrom);
+	int DataSize() const { return m_DataSize; }
 
 	int Crc();
 	void DebugDump();
@@ -70,6 +74,7 @@ private:
 
 public:
 	CSnapshotDelta();
+
 	int GetDataRate(int Index) { return m_aSnapshotDataRate[Index]; }
 	int GetDataUpdates(int Index) { return m_aSnapshotDataUpdates[Index]; }
 	void SetStaticsize(int ItemType, int Size);
@@ -129,6 +134,7 @@ public:
 
 	CSnapshotItem *GetItem(int Index);
 	int *GetItemData(int Key);
+	int NumItems() const { return m_NumItems; };
 
 	int Finish(void *Snapdata);
 };
